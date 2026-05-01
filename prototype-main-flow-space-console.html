@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Виджет записи на встречу</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Unbounded:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      /* ── Logo palette: #3B8ED9 (blue) → #17BCA8 (teal) ── */
+      --bg:           #040C10;
+      --bg-glow:      #091620;
+      --card:         #0A1620;
+      --card-2:       #101E28;
+      --line:         rgba(80, 175, 185, 0.26);
+      --line-strong:  rgba(23, 188, 168, 0.52);
+      --text:         #DDF0F4;
+      --muted:        #7AAAB5;
+      --primary:      #091620;
+      --accent:       #17BCA8;
+      --accent-soft:  rgba(23, 188, 168, 0.12);
+      --accent-blue:  #3B8ED9;
+      --accent-grad:  linear-gradient(135deg, #3B8ED9 0%, #17BCA8 100%);
+      --cyan:         #3BD9D0;
+      --cyan-soft:    rgba(59, 217, 208, 0.14);
+      --danger:       #ff5f7e;
+      --ok:           #17D4BE;
+      --radius-lg:    20px;
+      --radius-md:    12px;
+      --shadow:       0 26px 52px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: "Manrope", "Segoe UI", sans-serif;
+      color: var(--text);
+      background: #000000;
+    }
+
+    body::before {
+      content: none;
+    }
+
+    .widget {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 940px;
+      margin: 0 auto;
+      padding: 22px;
+    }
+
+    .card {
+      position: relative;
+      background: #000000;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(4px);
+    }
+
+    .card::before {
+      content: none;
+    }
+
+    .head,
+    .body {
+      position: relative;
+      z-index: 1;
+    }
+
+    .head {
+      background: #000000;
+      border-bottom: 1px solid var(--line-strong);
+      color: var(--text);
+      padding: 18px 20px;
+    }
+
+    .head h1 {
+      margin: 0;
+      font-family: "Unbounded", inherit;
+      text-transform: uppercase;
+      font-size: 28px;
+      letter-spacing: 0.05em;
+      line-height: 1.28;
+      color: #f3f8e6;
+      text-shadow: 0 0 18px rgba(123, 255, 191, 0.18);
+    }
+
+    .head p {
+      font-family: inherit;
+      margin: 10px 0 0;
+      font-size: 13px;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: #c0d0b2;
+    }
+
+    .body {
+      padding: 18px;
+    }
+
+    .panel {
+      display: none;
+      animation: fade 0.2s ease;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    @keyframes fade {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h2 {
+      margin: 0;
+      font-family: "Unbounded", inherit;
+      font-size: 22px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #f0f8e2;
+      text-shadow: 0 0 12px rgba(123, 255, 191, 0.14);
+    }
+
+    .subtitle {
+      font-family: inherit;
+      margin: 8px 0 16px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .date-grid,
+    .time-grid {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .date-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .time-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .time-wrap {
+      margin-top: 8px;
+    }
+
+    .time-title {
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #b7cf8c;
+      text-transform: uppercase;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .hint {
+      font-family: inherit;
+      margin-top: 8px;
+      font-size: 13px;
+      color: #93a789;
+      font-weight: 700;
+    }
+
+    .option {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #0b0f09;
+      min-height: 56px;
+      padding: 8px;
+      text-align: center;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      color: #e1edd0;
+      cursor: pointer;
+      transition: 0.18s ease;
+      box-shadow: inset 0 0 0 1px rgba(80, 175, 185, 0.09);
+    }
+
+    .option small {
+      display: block;
+      margin-top: 3px;
+      font-size: 11px;
+      color: #9caf8b;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .option:hover {
+      border-color: var(--line-strong);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(32, 45, 24, 0.34);
+    }
+
+    .option.selected {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: #efffcc;
+      box-shadow: 0 10px 24px rgba(23, 188, 168, 0.2);
+    }
+
+    .option.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+      background: rgba(19, 25, 15, 0.75);
+    }
+
+    .option.holiday small {
+      text-transform: none;
+      letter-spacing: 0;
+      color: #b9c29a;
+    }
+
+    .summary {
+      border: 1px solid rgba(80, 175, 185, 0.45);
+      background: #10160b;
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: 13px;
+      color: #d8e9c8;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    .summary span {
+      color: #f2f9df;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .contacts-grid {
+      grid-template-columns: 1fr;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .contacts-grid .field {
+      gap: 4px;
+    }
+
+    .contacts-grid .error {
+      min-height: 0;
+      line-height: 1.2;
+      margin-top: 2px;
+    }
+
+    .contacts-grid .error:empty {
+      display: none;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      color: #a8bd8d;
+      text-transform: uppercase;
+    }
+
+
+    .label-caption {
+      display: block;
+      margin-top: 4px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+      color: #8ea086;
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #090d08;
+      padding: 11px 12px;
+      font: inherit;
+      font-size: 14px;
+      color: #e8f3ff;
+      transition: 0.18s ease;
+    }
+
+    .field textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .field input::placeholder,
+    .field textarea::placeholder {
+      color: #8f9f79;
+    }
+
+    .field input:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(23, 188, 168, 0.2);
+    }
+
+    .field input.invalid,
+    .field textarea.invalid {
+      border-color: var(--danger);
+      background: rgba(255, 95, 126, 0.08);
+    }
+
+    .error {
+      min-height: 14px;
+      color: var(--danger);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #090d08;
+      padding: 9px 10px;
+    }
+
+    .toggle-text {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+      color: #c8d8b6;
+      font-family: inherit;
+      line-height: 1.35;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 28px;
+      flex: 0 0 auto;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #1e2919;
+      border: 1px solid #3b4f2f;
+      transition: 0.18s ease;
+      border-radius: 999px;
+    }
+
+    .slider::before {
+      content: "";
+      position: absolute;
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      top: 3px;
+      background: #ced7c0;
+      transition: 0.18s ease;
+      border-radius: 50%;
+    }
+
+    .switch input:checked + .slider {
+      background: #27310e;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(23, 188, 168, 0.2);
+    }
+
+    .switch input:checked + .slider::before {
+      transform: translateX(22px);
+      background: var(--accent);
+    }
+
+    .chips {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      background: rgba(23, 188, 168, 0.14);
+      border: 1px solid rgba(23, 188, 168, 0.36);
+      color: #e7f4c9;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 10px;
+    }
+
+    .chip button {
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      color: #b6cf7f;
+      font-weight: 800;
+      padding: 0;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .topics {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .topic-btn {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(19, 25, 16, 0.78) 0%, rgba(11, 14, 10, 0.9) 100%);
+      color: #e0eccd;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      min-height: 46px;
+      cursor: pointer;
+      transition: 0.18s ease;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .topic-btn:hover {
+      border-color: var(--line-strong);
+      transform: translateY(-1px);
+    }
+
+    .topic-btn.active {
+      border-color: var(--accent);
+      background: linear-gradient(180deg, rgba(23, 188, 168, 0.22) 0%, rgba(23, 188, 168, 0.1) 100%);
+      color: #f4ffd8;
+      box-shadow: 0 10px 24px rgba(23, 188, 168, 0.2);
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .team-btn {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(19, 25, 16, 0.78) 0%, rgba(11, 14, 10, 0.9) 100%);
+      color: #e0eccd;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      min-height: 44px;
+      cursor: pointer;
+      transition: 0.18s ease;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .team-btn:hover {
+      border-color: var(--line-strong);
+      transform: translateY(-1px);
+    }
+
+    .team-btn.active {
+      border-color: var(--accent);
+      background: linear-gradient(180deg, rgba(23, 188, 168, 0.22) 0%, rgba(23, 188, 168, 0.1) 100%);
+      color: #f4ffd8;
+      box-shadow: 0 10px 24px rgba(23, 188, 168, 0.2);
+    }
+
+    .actions {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .btn {
+      min-height: 44px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      padding: 0 16px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: 0.18s ease;
+      text-transform: uppercase;
+    }
+
+    .btn.primary {
+      background: linear-gradient(180deg, #141a11 0%, #0a0d08 100%);
+      border-color: rgba(23, 188, 168, 0.34);
+      color: #f1f7df;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .btn.primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: rgba(23, 188, 168, 0.72);
+    }
+
+    .btn.accent {
+      background: linear-gradient(180deg, #dcff62 0%, #17BCA8 65%);
+      color: #202900;
+      border-color: rgba(23, 188, 168, 0.55);
+      box-shadow: 0 10px 26px rgba(23, 188, 168, 0.3);
+    }
+
+    .btn.secondary {
+      border-color: var(--line);
+      background: linear-gradient(180deg, rgba(18, 23, 14, 0.7) 0%, rgba(10, 14, 9, 0.86) 100%);
+      color: #ceddb7;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .success {
+      display: none;
+      border: 1px solid rgba(108, 255, 176, 0.3);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(47, 240, 166, 0.11) 0%, rgba(10, 16, 11, 0.78) 100%);
+      padding: 16px;
+    }
+
+    .success.active {
+      display: block;
+    }
+
+    .ok {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(47, 240, 166, 0.18);
+      color: var(--ok);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 25px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      box-shadow: 0 0 0 1px rgba(47, 240, 166, 0.35), 0 0 24px rgba(47, 240, 166, 0.25);
+    }
+
+    .success h3 {
+      margin: 0 0 8px;
+      font-family: "Unbounded", inherit;
+      font-size: 24px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #f3fff9;
+    }
+
+    .success p {
+      margin: 0;
+      color: #c6d8b3;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .success-meta {
+      margin-top: 12px;
+      border: 1px solid rgba(80, 175, 185, 0.45);
+      border-radius: 10px;
+      background: rgba(8, 12, 7, 0.72);
+      padding: 10px 12px;
+      font-size: 14px;
+      color: #e0eccd;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 820px) {
+      .date-grid,
+      .time-grid,
+      .grid,
+      .topics,
+      .team-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .head h1 {
+        font-size: 24px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .widget {
+        padding: 10px;
+      }
+
+      .head {
+        padding: 14px;
+      }
+
+      .head h1 {
+        font-size: 19px;
+      }
+
+      .date-grid,
+      .time-grid,
+      .grid,
+      .topics,
+      .team-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .body {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="widget">
+    <div class="card">
+      <div class="head hidden">
+        <h1>Выберите удобно время для встречи</h1>
+        <p>Заполните короткую форму, и мы отправим подтверждение записи.</p>
+      </div>
+
+      <div class="body">
+        <section class="panel active" data-step="1">
+          <h2>Выберите удобную для вас дату</h2>
+          <div class="subtitle">Сначала выберите дату, чтобы увидеть доступное время</div>
+
+          <div class="date-grid" id="dateGrid"></div>
+
+          <div class="time-wrap hidden" id="timeWrap">
+            <div class="time-title">Выберите время</div>
+            <div class="time-grid" id="timeGrid"></div>
+          </div>
+
+
+          <div class="actions">
+            <span></span>
+            <button class="btn primary" id="toContacts" type="button" disabled>Далее</button>
+          </div>
+        </section>
+
+        <section class="panel" data-step="2">
+          <h2>Контакты</h2>
+          <div class="subtitle">Укажи ваши контактные данные и добавьте участников встречи с вашей стороны</div>
+
+          <div class="summary" id="slotSummary">Выбранный слот: <span>не выбран</span></div>
+
+          <div class="grid contacts-grid">
+            <div class="field" data-field-id="firstName">
+              <label for="firstName">Имя *</label>
+              <input id="firstName" type="text" placeholder="Иван" value="Тест" />
+              <div class="error" data-error-for="firstName"></div>
+            </div>
+
+            <div class="field" data-field-id="lastName">
+              <label for="lastName">Фамилия *</label>
+              <input id="lastName" type="text" placeholder="Петров" value="Пользователь" />
+              <div class="error" data-error-for="lastName"></div>
+            </div>
+
+            <div class="field" data-field-id="email">
+              <label for="email">Email *</label>
+              <input id="email" type="email" placeholder="name@company.ru" value="demo.user@example.com" />
+              <div class="error" data-error-for="email"></div>
+            </div>
+
+            <div class="field" data-field-id="phone">
+              <label for="phone">Телефон *</label>
+              <input id="phone" type="tel" placeholder="+7 999 123-45-67" value="+7 999 999 99 99" />
+              <div class="error" data-error-for="phone"></div>
+            </div>
+
+            <div class="field full" data-field-id="telegram">
+              <label for="telegram">Ваш Telegram (сможем прислать напоминания и ссылку в чат)</label>
+              <input id="telegram" type="text" placeholder="@username" value="@demo_user" />
+              <div class="error" data-error-for="telegram"></div>
+            </div>
+
+            <div class="field full" data-field-id="participants">
+              <label for="participantInput">Email участников встречи<span class="label-caption">Добавьте сразу e-mail ваших коллег, которым тоже важно быть на встрече</span></label>
+              <input id="participantInput" type="text" placeholder="Вставьте email через запятую, пробел или перенос строки" value="colleague.one@example.com, colleague.two@example.com" />
+              <div class="chips" id="participantChips"></div>
+              <div class="error" data-error-for="participantInput"></div>
+            </div>
+
+            <div class="field full" data-field-id="customMeeting">
+              <div class="toggle-row">
+                <p class="toggle-text">Добавить свою ссылку на видеовстречу</p>
+                <label class="switch" for="customMeetingToggle" aria-label="Добавить свою ссылку на видеовстречу">
+                  <input id="customMeetingToggle" type="checkbox" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="field full hidden" id="customMeetingField">
+              <label for="customMeetingUrl">Ссылка на видеовстречу</label>
+              <input id="customMeetingUrl" type="text" placeholder="https://meet.example.com/room-123" />
+              <div class="error" data-error-for="customMeetingUrl"></div>
+            </div>
+
+            <div id="customContactFieldsContainer"></div>
+          </div>
+
+          <div class="actions">
+            <button class="btn secondary" id="backToSlot" type="button">Назад</button>
+            <button class="btn primary" id="toQuestions" type="button">Далее</button>
+          </div>
+        </section>
+
+        <section class="panel" data-step="3">
+          <h2>Вопросы к встрече</h2>
+          <div class="subtitle">Выберите, что хотите увидеть на демо, и укажите информацию о компании.</div>
+
+          <div class="summary" id="questionSlotSummary">Выбранный слот: <span>не выбран</span></div>
+
+          <div class="field full">
+            <label>Что хотите увидеть на демо?</label>
+            <div class="topics" id="topics"></div>
+            <div class="error" data-error-for="topics"></div>
+          </div>
+
+          <div class="grid">
+            <div class="field">
+              <label for="companyName">Название компании</label>
+              <input id="companyName" type="text" placeholder="ООО Пример" />
+              <div class="error" data-error-for="companyName"></div>
+            </div>
+
+            <div class="field">
+              <label for="companySite">Сайт компании (необязательно)</label>
+              <input id="companySite" type="text" placeholder="https://company.ru" />
+              <div class="error" data-error-for="companySite"></div>
+            </div>
+          </div>
+
+          <div class="field full">
+            <label>Размер команды *</label>
+            <div class="team-grid" id="teamSizeGrid"></div>
+            <div class="error" data-error-for="teamSize"></div>
+          </div>
+
+          <div class="actions">
+            <button class="btn secondary" id="backToContacts" type="button">Назад</button>
+            <button class="btn accent" id="confirm" type="button">Подтвердить запись</button>
+          </div>
+        </section>
+
+        <section class="success" id="success">
+          <div class="ok">✓</div>
+          <h3>Вы успешно записались</h3>
+          <p>Подтверждение отправлено на email. Перед встречей мы дополнительно пришлем напоминание.</p>
+          <div class="success-meta" id="successMeta"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Preview config ───────────────────────────────────────────────────────
+    function _decodeCfgParam(value) {
+      if (!value) return null;
+      try {
+        return JSON.parse(decodeURIComponent(escape(atob(value))));
+      } catch {
+        return null;
+      }
+    }
+
+    function _readPreviewCfg() {
+      try { return JSON.parse(localStorage.getItem('smm_preview_cfg') || 'null'); } catch { return null; }
+    }
+
+    function _readSavedWidgetCfg() {
+      try {
+        const list = JSON.parse(localStorage.getItem('smm_widgets') || '[]');
+        if (!Array.isArray(list) || !list.length) return null;
+
+        const params = new URLSearchParams(window.location.search);
+        const byId = params.get('widgetId') || params.get('widget') || params.get('id');
+        const activeId = localStorage.getItem('smm_active_widget_id');
+
+        const targetId = byId || activeId;
+        if (targetId) {
+          const found = list.find((w) => w && w.id === targetId);
+          if (found && found.config) return found.config;
+        }
+
+        const last = list[list.length - 1];
+        return last && last.config ? last.config : null;
+      } catch {
+        return null;
+      }
+    }
+
+    const _urlCfg = _decodeCfgParam(new URLSearchParams(window.location.search).get('cfg'));
+    const _previewCfg = _readPreviewCfg();
+    const _widgetCfg = _readSavedWidgetCfg();
+    const _pc = _urlCfg || _previewCfg || _widgetCfg || {};
+
+    // CSS variables
+    if (_pc.accentColor) {
+      function _hexRgba(hex, a) {
+        const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+        return `rgba(${r},${g},${b},${a})`;
+      }
+      document.documentElement.style.setProperty('--accent', _pc.accentColor);
+      document.documentElement.style.setProperty('--accent-soft', _hexRgba(_pc.accentColor, 0.12));
+      document.documentElement.style.setProperty('--line-strong', _hexRgba(_pc.accentColor, 0.52));
+    }
+    if (_pc.bgColor) {
+      document.documentElement.style.setProperty('--card', _pc.bgColor);
+      document.documentElement.style.setProperty('--primary', _pc.bgColor);
+    }
+    if (_pc.borderRadius != null)
+      document.documentElement.style.setProperty('--radius-lg', _pc.borderRadius + 'px');
+    if (_pc.maxWidth)
+      document.querySelector('.widget').style.maxWidth = _pc.maxWidth + 'px';
+
+    // Data: questions → topics / teamSizes
+    const _choiceQs = (_pc.questions || []).filter(q => q.type === 'choice');
+    const topicOptions = _choiceQs[0]
+      ? (_choiceQs[0].options || []).map((label, i) => ({ id: 'opt_' + i, label }))
+      : [
+          { id: 'interactive_longreads', label: 'Интерактивные лонгриды' },
+          { id: 'slide_courses',         label: 'Слайдовые курсы' },
+          { id: 'interactive_trainers',  label: 'Интерактивные тренажеры' }
+        ];
+    const teamSizeOptions = _choiceQs[1]
+      ? (_choiceQs[1].options || []).map((label, i) => ({ id: 'ts_' + i, label }))
+      : [
+          { id: 'one',      label: '1 человек' },
+          { id: 'three',    label: '3 человека' },
+          { id: 'six_plus', label: '6 и более человек' }
+        ];
+
+    // Labels for questions blocks
+    const _q0label = _choiceQs[0] ? _choiceQs[0].text : 'Что показать на демо';
+    const _q1label = _choiceQs[1] ? _choiceQs[1].text : 'Размер команды';
+    (() => {
+      const els = document.querySelectorAll('[data-qlabel="0"]');
+      els.forEach(el => { el.textContent = _q0label; });
+      const els2 = document.querySelectorAll('[data-qlabel="1"]');
+      els2.forEach(el => { el.textContent = _q1label; });
+    })();
+
+    const timeSlots = (_pc.timeSlots && _pc.timeSlots.length)
+      ? _pc.timeSlots
+      : ['10:00','10:30','11:00','11:30','12:00','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
+
+    const _allowedWeekdays = (_pc.weekdays && _pc.weekdays.length) ? _pc.weekdays : [1,2,3,4,5];
+    const _daysAhead = _pc.daysAhead || 7;
+
+    const fixedHolidayDays = (_pc.fixedHolidays && _pc.fixedHolidays.length)
+      ? _pc.fixedHolidays
+      : ['01-01','01-02','01-03','01-04','01-05','01-06','01-07','01-08','02-23','03-08','05-01','05-09','06-12','11-04'];
+
+    const _observedList = (_pc.observedHolidays && _pc.observedHolidays.length)
+      ? _pc.observedHolidays
+      : ['2026-03-09','2026-05-11'];
+    // Contact fields config
+    const _contactFields = _pc.contactFields || [];
+    function _cfFind(id) { return _contactFields.find(f => f.id === id); }
+    function _cfEnabled(id)  { const f = _cfFind(id); return f ? f.enabled  : true; }
+    function _cfRequired(id) { const f = _cfFind(id); return f ? f.required : ['firstName','lastName','email','phone'].includes(id); }
+    function _cfLabel(id, fallback) { const f = _cfFind(id); return (f && f.label) ? f.label : fallback; }
+
+    // Apply contact fields to DOM
+    if (_contactFields.length) {
+      const _grid = document.querySelector('.contacts-grid');
+      _contactFields.forEach(cf => {
+        const wrapper = _grid ? _grid.querySelector(`[data-field-id="${cf.id}"]`) : null;
+        if (wrapper) {
+          wrapper.style.display = cf.enabled ? '' : 'none';
+          const lbl = wrapper.querySelector('label');
+          if (lbl && cf.type !== 'participants' && cf.type !== 'custom-meeting') {
+            lbl.textContent = cf.label + (cf.required ? ' *' : '');
+          } else if (lbl && cf.type === 'custom-meeting') {
+            wrapper.querySelector('.toggle-text').textContent = cf.label;
+          }
+        } else if (cf.id.startsWith('cf_') && cf.enabled) {
+          // Custom field — inject into grid
+          const container = document.getElementById('customContactFieldsContainer');
+          if (container) {
+            const div = document.createElement('div');
+            div.className = 'field full'; div.dataset.fieldId = cf.id;
+            div.innerHTML = `<label for="${cf.id}">${cf.label}${cf.required ? ' *' : ''}</label>` +
+              `<input id="${cf.id}" type="text" placeholder="${cf.label}..." />` +
+              `<div class="error" data-error-for="${cf.id}"></div>`;
+            container.appendChild(div);
+          }
+        }
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const state = {
+      currentStep: 1,
+      selectedDate: null,
+      selectedTime: null,
+      contacts: {
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        telegram: '',
+        customMeetingUrl: ''
+      },
+      participantEmails: [],
+      topics: [],
+      companyName: '',
+      companySite: '',
+      teamSize: ''
+    };
+
+    // topicOptions, teamSizeOptions, timeSlots — defined above from preview config
+
+    const refs = {
+      dateGrid: document.getElementById('dateGrid'),
+      timeGrid: document.getElementById('timeGrid'),
+      timeWrap: document.getElementById('timeWrap'),
+      toContacts: document.getElementById('toContacts'),
+      slotSummary: document.getElementById('slotSummary'),
+      questionSlotSummary: document.getElementById('questionSlotSummary'),
+      participantInput: document.getElementById('participantInput'),
+      participantChips: document.getElementById('participantChips'),
+      customMeetingToggle: document.getElementById('customMeetingToggle'),
+      customMeetingField: document.getElementById('customMeetingField'),
+      customMeetingUrl: document.getElementById('customMeetingUrl'),
+      topics: document.getElementById('topics'),
+      teamSizeGrid: document.getElementById('teamSizeGrid'),
+      success: document.getElementById('success'),
+      successMeta: document.getElementById('successMeta')
+    };
+
+    // fixedHolidayDays — defined above from preview config
+
+    function isProductionHoliday(dateId) {
+      const monthDay = dateId.slice(5);
+      if (fixedHolidayDays.includes(monthDay)) return true;
+      return _observedList.includes(dateId);
+    }
+
+    const businessDates = getBusinessDates(_daysAhead);
+
+    function toDateId(date) {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function getBusinessDates(limit) {
+      const result = [];
+      const now = new Date();
+      let plus = 1;
+
+      while (result.length < limit) {
+        const d = new Date(now);
+        d.setDate(now.getDate() + plus);
+        plus += 1;
+
+        const weekday = d.getDay();
+        if (!_allowedWeekdays.includes(weekday)) continue;
+
+        const dateId = toDateId(d);
+
+        result.push({
+          id: dateId,
+          date: d,
+          label: d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' }),
+          day: d.toLocaleDateString('ru-RU', { weekday: 'short' }),
+          isHoliday: isProductionHoliday(dateId)
+        });
+      }
+
+      return result;
+    }
+
+    function formatDate(id) {
+      if (!id) return 'не выбран';
+      const found = businessDates.find((x) => x.id === id);
+      if (!found) return id;
+      return found.date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', weekday: 'short' });
+    }
+
+    function availableSlots(dateId) {
+      const idx = businessDates.findIndex((d) => d.id === dateId);
+      return timeSlots.filter((slot, i) => (i + idx) % 4 !== 0);
+    }
+
+    function renderPanels() {
+      document.querySelectorAll('.panel').forEach((p) => {
+        p.classList.toggle('active', Number(p.dataset.step) === state.currentStep);
+      });
+      renderInlineSummary();
+    }
+
+    function renderInlineSummary() {
+      const slotText = `${formatDate(state.selectedDate)}, ${state.selectedTime || 'время не выбрано'}`;
+      refs.slotSummary.innerHTML = `Выбранный слот: <span>${slotText}</span>`;
+      refs.questionSlotSummary.innerHTML = `Выбранный слот: <span>${slotText}</span>`;
+    }
+
+    function renderDates() {
+      refs.dateGrid.innerHTML = '';
+      businessDates.forEach((d) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'option';
+        const isHoliday = d.isHoliday;
+
+        if (isHoliday) btn.classList.add('disabled', 'holiday');
+        if (state.selectedDate === d.id && !isHoliday) btn.classList.add('selected');
+
+        btn.innerHTML = `${d.label}<small>${isHoliday ? 'праздничный день' : d.day}</small>`;
+
+        btn.addEventListener('click', () => {
+          if (isHoliday) return;
+          state.selectedDate = d.id;
+          state.selectedTime = null;
+          renderDates();
+          renderTimes();
+          toggleSlotNext();
+          renderInlineSummary();
+        });
+        refs.dateGrid.appendChild(btn);
+      });
+    }
+
+    function renderTimes() {
+      refs.timeGrid.innerHTML = '';
+
+      if (!state.selectedDate) {
+        refs.timeWrap.classList.add('hidden');
+        return;
+      }
+
+      refs.timeWrap.classList.remove('hidden');
+
+      const allowed = availableSlots(state.selectedDate);
+
+      timeSlots.forEach((slot) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'option';
+        const isAllowed = allowed.includes(slot);
+
+        if (!isAllowed) {
+          btn.classList.add('disabled');
+          btn.textContent = slot;
+        } else {
+          btn.innerHTML = `${slot}<small>доступно</small>`;
+        }
+
+        if (state.selectedTime === slot) btn.classList.add('selected');
+
+        btn.addEventListener('click', () => {
+          if (!isAllowed) return;
+          state.selectedTime = slot;
+          renderTimes();
+          toggleSlotNext();
+          renderInlineSummary();
+        });
+
+        refs.timeGrid.appendChild(btn);
+      });
+    }
+
+    function toggleSlotNext() {
+      refs.toContacts.disabled = !(state.selectedDate && state.selectedTime);
+    }
+
+    function setError(name, text) {
+      const input = document.getElementById(name);
+      const error = document.querySelector(`[data-error-for="${name}"]`);
+      if (input) {
+        input.classList.toggle('invalid', Boolean(text));
+      }
+      if (error) error.textContent = text || '';
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.error').forEach((e) => (e.textContent = ''));
+      document.querySelectorAll('.invalid').forEach((e) => e.classList.remove('invalid'));
+    }
+
+    function validEmail(v) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    }
+
+    function parseParticipantEmails() {
+      const raw = refs.participantInput.value.trim();
+      if (!raw) return true;
+
+      const parts = raw
+        .split(/[\s,;\n\t]+/)
+        .map((x) => x.trim())
+        .filter(Boolean);
+
+      const invalid = [];
+      const valid = [];
+
+      parts.forEach((email) => {
+        if (validEmail(email)) {
+          valid.push(email.toLowerCase());
+        } else {
+          invalid.push(email);
+        }
+      });
+
+      if (invalid.length) {
+        setError('participantInput', `Некорректные email: ${invalid.join(', ')}`);
+        return false;
+      }
+
+      const combined = [...state.participantEmails, ...valid];
+      state.participantEmails = Array.from(new Set(combined));
+      refs.participantInput.value = '';
+      setError('participantInput', '');
+      renderParticipantChips();
+      return true;
+    }
+
+    function renderParticipantChips() {
+      refs.participantChips.innerHTML = '';
+      state.participantEmails.forEach((email, idx) => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.innerHTML = `${email} <button type="button" data-index="${idx}" aria-label="Удалить">×</button>`;
+        refs.participantChips.appendChild(chip);
+      });
+
+      refs.participantChips.querySelectorAll('button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const index = Number(btn.dataset.index);
+          state.participantEmails.splice(index, 1);
+          renderParticipantChips();
+        });
+      });
+    }
+
+    function renderTopics() {
+      refs.topics.innerHTML = '';
+      topicOptions.forEach((item) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'topic-btn';
+        if (state.topics.includes(item.id)) btn.classList.add('active');
+        btn.textContent = item.label;
+        btn.addEventListener('click', () => {
+          if (state.topics.includes(item.id)) {
+            state.topics = state.topics.filter((x) => x !== item.id);
+          } else {
+            state.topics.push(item.id);
+          }
+          renderTopics();
+          setError('topics', '');
+        });
+        refs.topics.appendChild(btn);
+      });
+    }
+
+    function renderTeamSizes() {
+      refs.teamSizeGrid.innerHTML = '';
+      teamSizeOptions.forEach((item) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'team-btn';
+        if (state.teamSize === item.id) btn.classList.add('active');
+        btn.textContent = item.label;
+        btn.addEventListener('click', () => {
+          state.teamSize = item.id;
+          renderTeamSizes();
+          setError('teamSize', '');
+        });
+        refs.teamSizeGrid.appendChild(btn);
+      });
+    }
+
+    function validContacts() {
+      clearErrors();
+
+      if (!parseParticipantEmails()) return false;
+
+      const c = {
+        firstName: document.getElementById('firstName').value.trim(),
+        lastName: document.getElementById('lastName').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        telegram: document.getElementById('telegram').value.trim(),
+        customMeetingUrl: refs.customMeetingUrl.value.trim()
+      };
+
+      let ok = true;
+
+      if (_cfEnabled('firstName') && _cfRequired('firstName') && c.firstName.length < 2) {
+        ok = false; setError('firstName', 'Не указано ' + _cfLabel('firstName', 'Имя'));
+      }
+      if (_cfEnabled('lastName') && _cfRequired('lastName') && c.lastName.length < 2) {
+        ok = false; setError('lastName', 'Не указана ' + _cfLabel('lastName', 'Фамилия'));
+      }
+      if (_cfEnabled('email') && _cfRequired('email') && !validEmail(c.email)) {
+        ok = false; setError('email', 'Введите корректный e-mail');
+      }
+      if (_cfEnabled('phone') && _cfRequired('phone')) {
+        const p = c.phone.replace(/\D/g, '');
+        if (!(p.length === 11 && (p.startsWith('7') || p.startsWith('8')))) {
+          ok = false; setError('phone', 'Пишите в формате +7 999 999 99 99');
+        }
+      }
+      if (_cfEnabled('telegram') && c.telegram && !/^@[A-Za-z0-9_]{5,}$/.test(c.telegram)) {
+        ok = false; setError('telegram', 'Например: @username');
+      }
+      // Custom fields validation
+      _contactFields.filter(cf => cf.id.startsWith('cf_') && cf.enabled && cf.required).forEach(cf => {
+        const inp = document.getElementById(cf.id);
+        if (inp && !inp.value.trim()) { ok = false; setError(cf.id, 'Заполните поле «' + cf.label + '»'); }
+      });
+
+      if (refs.customMeetingToggle.checked) {
+        if (!c.customMeetingUrl) {
+          ok = false;
+          setError('customMeetingUrl', 'Вставьте ссылку на видеовстречу');
+        } else {
+          let url = c.customMeetingUrl;
+          if (!/^https?:\/\//i.test(url)) {
+            url = `https://${url}`;
+          }
+
+          try {
+            const parsed = new URL(url);
+            if (!parsed.hostname || !parsed.hostname.includes('.')) {
+              ok = false;
+              setError('customMeetingUrl', 'Введите корректную ссылку');
+            } else {
+              c.customMeetingUrl = url;
+              setError('customMeetingUrl', '');
+            }
+          } catch (e) {
+            ok = false;
+            setError('customMeetingUrl', 'Введите корректную ссылку');
+          }
+        }
+      } else {
+        c.customMeetingUrl = '';
+        setError('customMeetingUrl', '');
+      }
+
+      if (ok) {
+        state.contacts = c;
+      }
+
+      return ok;
+    }
+
+    function validQuestionStep() {
+      const companyName = document.getElementById('companyName').value.trim();
+      const companySiteRaw = document.getElementById('companySite').value.trim();
+
+      setError('topics', '');
+      setError('teamSize', '');
+      setError('companySite', '');
+
+      let ok = true;
+
+      if (state.topics.length === 0) {
+        ok = false;
+        setError('topics', 'Выберите минимум один пункт.');
+      }
+
+      if (!state.teamSize) {
+        ok = false;
+        setError('teamSize', 'Выберите размер команды.');
+      }
+
+      let companySite = companySiteRaw;
+      if (companySiteRaw) {
+        if (!/^https?:\/\//i.test(companySiteRaw)) {
+          companySite = `https://${companySiteRaw}`;
+        }
+
+        try {
+          const parsed = new URL(companySite);
+          if (!parsed.hostname.includes('.')) {
+            ok = false;
+            setError('companySite', 'Укажите корректный URL сайта.');
+          }
+        } catch (e) {
+          ok = false;
+          setError('companySite', 'Укажите корректный URL сайта.');
+        }
+      }
+
+      if (ok) {
+        state.companyName = companyName;
+        state.companySite = companySite;
+      }
+
+      return ok;
+    }
+
+    function topicLabels() {
+      return state.topics
+        .map((id) => topicOptions.find((x) => x.id === id)?.label)
+        .filter(Boolean)
+        .join(', ');
+    }
+
+    function teamSizeLabel() {
+      return teamSizeOptions.find((x) => x.id === state.teamSize)?.label || 'не указан';
+    }
+
+    function showSuccess() {
+      document.querySelectorAll('.panel').forEach((p) => p.classList.remove('active'));
+      refs.success.classList.add('active');
+
+      const contactLine = `${state.contacts.firstName} ${state.contacts.lastName}, ${state.contacts.email}`;
+      const participants = state.participantEmails.length ? state.participantEmails.join(', ') : 'не добавлены';
+      const company = state.companyName || 'не указано';
+      const site = state.companySite || 'не указан';
+      const customMeeting = state.contacts.customMeetingUrl || 'не указана';
+
+      refs.successMeta.innerHTML = `
+        Слот: <strong>${formatDate(state.selectedDate)}, ${state.selectedTime}</strong><br />
+        Контакт: <strong>${contactLine}</strong><br />
+        Участники: <strong>${participants}</strong><br />
+        Своя ссылка на встречу: <strong>${customMeeting}</strong><br />
+        Что показать на демо: <strong>${topicLabels()}</strong><br />
+        Название компании: <strong>${company}</strong><br />
+        Сайт компании: <strong>${site}</strong><br />
+        Размер команды: <strong>${teamSizeLabel()}</strong>
+      `;
+    }
+
+    document.getElementById('toContacts').addEventListener('click', () => {
+      state.currentStep = 2;
+      renderPanels();
+    });
+
+    document.getElementById('backToSlot').addEventListener('click', () => {
+      state.currentStep = 1;
+      renderPanels();
+    });
+
+    document.getElementById('toQuestions').addEventListener('click', () => {
+      if (!validContacts()) return;
+      state.currentStep = 3;
+      renderPanels();
+    });
+
+    document.getElementById('backToContacts').addEventListener('click', () => {
+      state.currentStep = 2;
+      renderPanels();
+    });
+
+    document.getElementById('confirm').addEventListener('click', () => {
+      if (!validQuestionStep()) return;
+      showSuccess();
+    });
+
+    refs.participantInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',' || e.key === ';') {
+        e.preventDefault();
+        parseParticipantEmails();
+      }
+    });
+
+    refs.participantInput.addEventListener('blur', () => {
+      parseParticipantEmails();
+    });
+
+    refs.participantInput.addEventListener('paste', () => {
+      setTimeout(() => {
+        parseParticipantEmails();
+      }, 0);
+    });
+
+    refs.customMeetingToggle.addEventListener('change', () => {
+      const enabled = refs.customMeetingToggle.checked;
+      refs.customMeetingField.classList.toggle('hidden', !enabled);
+      if (!enabled) {
+        refs.customMeetingUrl.value = '';
+        setError('customMeetingUrl', '');
+      }
+    });
+
+    refs.customMeetingUrl.addEventListener('input', () => {
+      setError('customMeetingUrl', '');
+    });
+
+    renderDates();
+    renderTimes();
+    toggleSlotNext();
+    renderPanels();
+    renderTopics();
+    renderTeamSizes();
+  </script>
+</body>
+</html>

@@ -1,0 +1,3268 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>sMartMeeting — Личный кабинет</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Unbounded:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      /* ── Logo palette: #3B8ED9 (blue) → #17BCA8 (teal) ── */
+      --accent:         #17BCA8;
+      --accent-blue:    #3B8ED9;
+      --accent-grad:    linear-gradient(135deg, #3B8ED9 0%, #17BCA8 100%);
+      --accent-soft:    rgba(23,188,168,0.11);
+      --line:           rgba(23,165,180,0.22);
+      --line-strong:    rgba(23,188,168,0.46);
+      --text:           #DDF0F4;
+      --text-strong:    #EEF8FA;
+      --muted:          #7AAAB5;
+      --ok:             #17D4BE;
+      --danger:         #ff5f7e;
+      --bg:             #05090C;
+      --card:           #0A1418;
+      --surface-page:   #020709;
+      --surface-main:   #040C10;
+      --surface-sidebar:#030A0D;
+      --surface-elev:   #0D1820;
+      --surface-auth-head: #020709;
+      --hint-success:   #3A7880;
+      --sidebar-w: 236px;
+      --radius: 14px;
+    }
+    :root[data-theme="light"] {
+      --accent:         #0F95A8;
+      --accent-blue:    #2E7DC4;
+      --accent-grad:    linear-gradient(135deg, #2E7DC4 0%, #0F95A8 100%);
+      --accent-soft:    rgba(15,149,168,0.13);
+      --line:           rgba(15,120,145,0.18);
+      --line-strong:    rgba(15,149,168,0.42);
+      --text:           #0E2830;
+      --text-strong:    #071820;
+      --muted:          #3D7888;
+      --ok:             #0B9F82;
+      --danger:         #CD3A60;
+      --bg:             #EAF4F7;
+      --card:           #FFFFFF;
+      --surface-page:   #E4EFF3;
+      --surface-main:   #EFF8FA;
+      --surface-sidebar:#E0EBF0;
+      --surface-elev:   #FFFFFF;
+      --surface-auth-head: #D8E8EE;
+      --hint-success:   #4A6870;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: "Manrope", sans-serif; color: var(--text); background: var(--surface-page); }
+    :root[data-theme="light"] .sidebar {
+      box-shadow: 0 0 0 1px rgba(15,100,120,0.06) inset;
+    }
+    :root[data-theme="light"] .settings-card,
+    :root[data-theme="light"] .widget-card,
+    :root[data-theme="light"] .auth-card,
+    :root[data-theme="light"] .modal,
+    :root[data-theme="light"] .q-card,
+    :root[data-theme="light"] .rule-card,
+    :root[data-theme="light"] .emp-card {
+      box-shadow: 0 8px 22px rgba(35, 51, 72, 0.1);
+    }
+    :root[data-theme="light"] .btn-save:not(.accent),
+    :root[data-theme="light"] .btn-full:not(.accent-btn),
+    :root[data-theme="light"] .wcard-edit,
+    :root[data-theme="light"] .btn-generate:not(:disabled) {
+      background: #f5f8fc;
+      color: #2f4d6f;
+      border-color: rgba(56, 83, 121, 0.3);
+    }
+    :root[data-theme="light"] .btn-copy,
+    :root[data-theme="light"] .btn-logout,
+    :root[data-theme="light"] .preview-btn,
+    :root[data-theme="light"] .embed-tab,
+    :root[data-theme="light"] .btn-add,
+    :root[data-theme="light"] .q-type-btn {
+      background: #f8fbff;
+      color: #3e5672;
+    }
+    :root[data-theme="light"] .code-block,
+    :root[data-theme="light"] .share-link-inp {
+      color: #2f4762;
+      border-color: rgba(56, 83, 121, 0.3);
+    }
+    :root[data-theme="light"] .section-header h2,
+    :root[data-theme="light"] .widget-name-field,
+    :root[data-theme="light"] .modal-title,
+    :root[data-theme="light"] .wcard-name,
+    :root[data-theme="light"] .auth-brand h1 {
+      color: #132131 !important;
+    }
+    :root[data-theme="light"] .settings-card h3,
+    :root[data-theme="light"] .s-sublabel,
+    :root[data-theme="light"] .toggle-label,
+    :root[data-theme="light"] .sb-theme-wrap .toggle-label,
+    :root[data-theme="light"] .f-group label,
+    :root[data-theme="light"] .q-type-btn.active,
+    :root[data-theme="light"] .q-text-input,
+    :root[data-theme="light"] .q-free-hint,
+    :root[data-theme="light"] .cf-label-inp,
+    :root[data-theme="light"] .rule-label-inp,
+    :root[data-theme="light"] .dur-label-inp,
+    :root[data-theme="light"] .dur-min-inp,
+    :root[data-theme="light"] .emp-name-input,
+    :root[data-theme="light"] .emp-email-input {
+      color: #35506d;
+    }
+    :root[data-theme="light"] .s-field label,
+    :root[data-theme="light"] .section-header p,
+    :root[data-theme="light"] .wcard-meta,
+    :root[data-theme="light"] .intg-hint,
+    :root[data-theme="light"] .modal-sub,
+    :root[data-theme="light"] .auth-brand p,
+    :root[data-theme="light"] .widgets-empty-sub,
+    :root[data-theme="light"] .sb-brand p,
+    :root[data-theme="light"] .sb-user-email,
+    :root[data-theme="light"] .generate-hint {
+      color: #4e637d !important;
+    }
+    :root[data-theme="light"] .widgets-empty-title,
+    :root[data-theme="light"] .sb-user-name,
+    :root[data-theme="light"] .sb-brand h2,
+    :root[data-theme="light"] .calendar-provider-card h4,
+    :root[data-theme="light"] .q-text-input::placeholder,
+    :root[data-theme="light"] .dur-label-inp::placeholder,
+    :root[data-theme="light"] .emp-name-input::placeholder,
+    :root[data-theme="light"] .emp-email-input::placeholder,
+    :root[data-theme="light"] .cf-label-inp::placeholder {
+      color: #324a66 !important;
+    }
+    :root[data-theme="light"] .list-item input::placeholder,
+    :root[data-theme="light"] .rule-label-inp::placeholder {
+      color: #4e657d !important;
+    }
+    :root[data-theme="light"] .sb-item {
+      color: #3b5370;
+    }
+    :root[data-theme="light"] .sb-item:hover {
+      color: #1e3148;
+      background: rgba(56, 83, 121, 0.12);
+    }
+    :root[data-theme="light"] .sb-item.active {
+      color: #24360f;
+      background: rgba(183, 234, 22, 0.3);
+      border-color: rgba(183, 234, 22, 0.52);
+    }
+    :root[data-theme="light"] .btn-save.accent,
+    :root[data-theme="light"] .btn-full.accent-btn,
+    :root[data-theme="light"] .btn-add-widget,
+    :root[data-theme="light"] .btn-modal-save {
+      color: #162400;
+      box-shadow: 0 10px 26px rgba(166, 220, 18, 0.3);
+    }
+    :root[data-theme="light"] .toggle-track::after {
+      background: #5b7089;
+    }
+    :root[data-theme="light"] .toggle-switch input:checked + .toggle-track::after {
+      background: #88b102;
+    }
+
+    /* ===== AUTH ===== */
+    #authScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--card);
+      box-shadow: 0 24px 48px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+    .auth-brand {
+      background: var(--surface-auth-head);
+      border-bottom: 1px solid var(--line-strong);
+      padding: 22px 24px 18px;
+    }
+    .auth-brand h1 {
+      font-family: "Unbounded", sans-serif;
+      font-size: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-strong);
+    }
+    .auth-brand p { margin-top: 5px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .auth-tabs { display: flex; border-bottom: 1px solid var(--line); }
+    .auth-tab {
+      flex: 1; padding: 12px;
+      font: inherit; font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      background: transparent; border: none;
+      color: var(--muted); cursor: pointer; transition: 0.15s;
+    }
+    .auth-tab.active { color: var(--accent); background: var(--accent-soft); }
+    .auth-body { padding: 22px 24px; }
+    .auth-form { display: none; }
+    .auth-form.active { display: block; }
+    .f-group { margin-bottom: 14px; }
+    .f-group label {
+      display: block; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: #a0b890; margin-bottom: 6px;
+    }
+    .f-group input {
+      width: 100%; border: 1px solid var(--line); border-radius: 10px;
+      background: var(--surface-elev); padding: 10px 12px;
+      font: inherit; font-size: 14px; color: var(--text);
+      outline: none; transition: 0.15s;
+    }
+    .f-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(23,188,168,0.18); }
+    .f-group input.invalid { border-color: var(--danger); }
+    .f-error { min-height: 16px; color: var(--danger); font-size: 11px; font-weight: 700; margin-top: 4px; }
+    .pass-wrap { position: relative; }
+    .pass-wrap input { padding-right: 42px; }
+    .pass-eye {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 16px; padding: 2px; line-height: 1;
+    }
+    .btn-full {
+      width: 100%; min-height: 44px; border-radius: 10px;
+      border: 1px solid rgba(23,188,168,0.35);
+      background: linear-gradient(180deg,#0D1E28 0%,#071420 100%);
+      color: #f0f7dc; font: inherit; font-size: 14px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      cursor: pointer; transition: 0.15s; margin-top: 4px;
+    }
+    .btn-full:hover { border-color: rgba(23,188,168,0.65); transform: translateY(-1px); }
+    .btn-full.accent-btn {
+      background: var(--accent-grad);
+      color: #ffffff; border-color: transparent;
+      box-shadow: 0 8px 24px rgba(23,188,168,0.28);
+    }
+    .btn-full.accent-btn:hover { box-shadow: 0 12px 32px rgba(23,188,168,0.4); }
+    .auth-demo { text-align: center; margin-top: 14px; }
+    .auth-demo button {
+      background: none; border: none; color: var(--muted);
+      font: inherit; font-size: 12px; font-weight: 700;
+      cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+    }
+    .auth-demo button:hover { color: var(--text); }
+
+    /* ===== APP ===== */
+    #appScreen { display: none; min-height: 100vh; }
+    #appScreen.visible { display: flex; }
+
+    .sidebar {
+      width: var(--sidebar-w); flex: 0 0 var(--sidebar-w);
+      background: var(--surface-sidebar); border-right: 1px solid var(--line);
+      display: flex; flex-direction: column;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sb-brand { padding: 18px 16px 14px; border-bottom: 1px solid var(--line); }
+    .sb-brand h2 {
+      font-family: "Unbounded", sans-serif; font-size: 13px;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-strong);
+    }
+    .sb-brand p { margin-top: 3px; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .sb-nav { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; }
+    .sb-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 10px; border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent; color: var(--muted);
+      font: inherit; font-size: 13px; font-weight: 700;
+      cursor: pointer; text-align: left; transition: 0.15s; width: 100%;
+    }
+    .sb-item .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+    }
+    .sb-item .icon svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .sb-item:hover { background: rgba(80,175,185,0.06); color: var(--text); }
+    .sb-item.active { background: var(--accent-soft); color: var(--accent); border-color: rgba(23,188,168,0.2); }
+    .sb-divider { height: 1px; background: var(--line); margin: 6px 0; }
+    .sb-item.embed-item { background: rgba(23,188,168,0.06); border-color: rgba(23,188,168,0.18); color: #4ABEC8; }
+    .sb-item.embed-item:hover, .sb-item.embed-item.active { background: rgba(23,188,168,0.14); color: var(--accent); border-color: rgba(23,188,168,0.4); }
+    .sb-user { padding: 12px 14px; border-top: 1px solid var(--line); }
+    .sb-user-name { font-size: 12px; font-weight: 700; color: #c8d8b0; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sb-user-email { font-size: 11px; color: var(--muted); margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sb-theme-wrap {
+      margin: 8px 8px 6px;
+      padding: 10px 10px 9px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(23,188,168,0.03);
+    }
+    .sb-theme-title {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--muted); margin-bottom: 8px;
+    }
+    .sb-theme-wrap .toggle-row { padding: 0; gap: 10px; }
+    .sb-theme-wrap .toggle-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #bdd39f;
+    }
+    .btn-logout {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: none; border: 1px solid var(--line); border-radius: 8px;
+      color: var(--muted); font: inherit; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      cursor: pointer; padding: 5px 10px; transition: 0.15s;
+    }
+    .btn-logout svg {
+      width: 14px; height: 14px; stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .btn-logout:hover { color: var(--danger); border-color: var(--danger); }
+
+    .main { flex: 1; min-width: 0; overflow-y: auto; padding: 28px; background: var(--surface-main); }
+    .content-section { display: none; }
+    .content-section.active { display: block; }
+    .section-header { margin-bottom: 22px; }
+    .section-header h2 {
+      font-family: "Unbounded", sans-serif; font-size: 20px;
+      text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-strong);
+    }
+    .section-header p { margin-top: 6px; font-size: 13px; color: var(--muted); }
+
+    .settings-card {
+      border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--card); padding: 20px; margin-bottom: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+    }
+    .settings-card h3 {
+      font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.09em; color: #6BAAB8; margin-bottom: 16px;
+    }
+    .s-field { margin-bottom: 14px; }
+    .s-field:last-child { margin-bottom: 0; }
+    .s-field label {
+      display: block; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      color: #7a9070; margin-bottom: 6px;
+    }
+    .s-field input[type="text"],
+    .s-field input[type="email"],
+    .s-field input[type="number"],
+    .s-field textarea {
+      width: 100%; border: 1px solid var(--line); border-radius: 10px;
+      background: var(--surface-elev); padding: 10px 12px;
+      font: inherit; font-size: 14px; color: var(--text);
+      outline: none; transition: 0.15s;
+    }
+    .s-field textarea { min-height: 80px; resize: vertical; }
+    .s-field input:focus, .s-field textarea:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(23,188,168,0.15);
+    }
+
+    /* checkbox grid */
+    .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; }
+    .check-item { position: relative; }
+    .check-item input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .check-item label {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 36px; border: 1px solid var(--line); border-radius: 8px;
+      background: var(--surface-elev); font-size: 13px; font-weight: 700; color: #c0d0a8;
+      cursor: pointer; transition: 0.15s;
+      text-transform: none; letter-spacing: 0; padding: 4px 8px; text-align: center;
+    }
+    .check-item input:checked + label { border-color: var(--accent); background: var(--accent-soft); color: #B0EFF0; }
+
+    /* list items */
+    .list-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .list-item {
+      display: flex; align-items: center; gap: 8px;
+      border: 1px solid var(--line); border-radius: 10px;
+      background: var(--surface-elev); padding: 8px 10px;
+    }
+    .list-item input {
+      flex: 1; background: transparent; border: none; outline: none;
+      font: inherit; font-size: 14px; font-weight: 700; color: var(--text);
+    }
+    .list-item input::placeholder { color: #3A7880; font-weight: 600; }
+    .list-item-del {
+      background: none; border: none; color: #3A7880;
+      font-size: 20px; cursor: pointer; padding: 0 2px;
+      line-height: 1; transition: 0.15s; flex: 0 0 auto;
+    }
+    .list-item-del:hover { color: var(--danger); }
+    .btn-add {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: none; border: 1px dashed rgba(80,175,185,0.3);
+      border-radius: 10px; color: var(--muted);
+      font: inherit; font-size: 13px; font-weight: 700;
+      cursor: pointer; padding: 8px 14px; transition: 0.15s;
+    }
+    .btn-add:hover { border-color: var(--line-strong); color: var(--text); }
+
+    /* color picker */
+    .color-row { display: flex; align-items: center; gap: 10px; }
+    .color-row input[type="color"] {
+      width: 44px; height: 38px;
+      border: 1px solid var(--line); border-radius: 8px;
+      background: var(--surface-elev); cursor: pointer; padding: 3px; flex: 0 0 auto;
+    }
+    .color-row .s-field { flex: 1; margin: 0; }
+
+    /* save bar */
+    .save-bar { display: flex; justify-content: flex-end; align-items: center; margin-top: 8px; }
+    .btn-reset {
+      background: none; border: none; cursor: pointer; font: inherit;
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: #2e3d28; padding: 4px 6px;
+      margin-right: auto; opacity: 0.55; transition: opacity 0.2s, color 0.2s;
+    }
+    .btn-reset:hover { opacity: 0.85; color: #3A7880; }
+    .btn-save {
+      min-height: 40px; border-radius: 10px;
+      border: 1px solid rgba(23,188,168,0.35);
+      background: linear-gradient(180deg,#0D1E28 0%,#071420 100%);
+      color: #f0f7dc; font: inherit; font-size: 13px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      cursor: pointer; transition: 0.15s; padding: 0 20px;
+    }
+    .btn-save:hover { border-color: rgba(23,188,168,0.65); transform: translateY(-1px); }
+    .btn-save.accent {
+      background: var(--accent-grad);
+      color: #ffffff; border-color: transparent;
+      box-shadow: 0 8px 24px rgba(23,188,168,0.25);
+    }
+    .btn-save.accent:hover { box-shadow: 0 12px 32px rgba(23,188,168,0.4); }
+
+    /* embed section */
+    .embed-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+    .embed-tab {
+      padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+      background: var(--surface-elev); color: var(--muted); font: inherit;
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; cursor: pointer; transition: 0.15s;
+    }
+    .embed-tab.active { border-color: var(--accent); background: var(--accent-soft); color: #80DAEA; }
+
+    .code-wrap { position: relative; }
+    .code-block {
+      background: var(--surface-elev); border: 1px solid var(--line); border-radius: 12px;
+      padding: 16px 16px 16px 16px; font-family: "Courier New", monospace;
+      font-size: 12px; line-height: 1.65; color: #9ec87e;
+      overflow-x: auto; white-space: pre; margin-bottom: 12px;
+    }
+    .btn-copy {
+      position: absolute; top: 10px; right: 10px;
+      background: rgba(10,14,9,0.92); border: 1px solid var(--line);
+      border-radius: 8px; color: var(--muted); font: inherit;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; cursor: pointer; padding: 5px 10px; transition: 0.15s;
+    }
+    .btn-copy:hover { border-color: var(--line-strong); color: var(--text); }
+    .btn-copy.copied { color: var(--ok); border-color: rgba(47,240,166,0.5); }
+
+    .embed-note {
+      font-size: 12px; color: var(--muted); line-height: 1.55;
+      border: 1px solid var(--line); border-radius: 10px;
+      padding: 10px 12px; background: #070a06;
+    }
+
+    /* preview btn */
+    .preview-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      border: 1px solid var(--line); border-radius: 10px;
+      background: var(--surface-elev); color: var(--muted);
+      font: inherit; font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      cursor: pointer; padding: 7px 14px; transition: 0.15s;
+      text-decoration: none;
+    }
+    .preview-btn:hover { border-color: var(--line-strong); color: var(--text); }
+
+    .section-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 22px;
+    }
+
+    /* toast */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #081820; border: 1px solid rgba(47,240,166,0.35);
+      border-radius: 12px; padding: 12px 18px;
+      font-size: 13px; font-weight: 700; color: var(--ok);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+      transform: translateY(16px); opacity: 0;
+      transition: 0.28s ease; pointer-events: none; z-index: 9999;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ===== EMPLOYEE CARDS ===== */
+    .emp-card {
+      border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--surface-elev); margin-bottom: 10px; overflow: hidden;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+    }
+    .emp-header {
+      display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+    }
+    .emp-fields { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; min-width: 0; }
+    .emp-name-input, .emp-email-input {
+      flex: 1; background: transparent; border: 1px solid var(--line);
+      border-radius: 8px; outline: none; font: inherit;
+      font-size: 13px; font-weight: 700; color: var(--text);
+      padding: 7px 10px; transition: 0.15s; min-width: 0;
+    }
+    .emp-name-input:focus, .emp-email-input:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 2px rgba(23,188,168,0.12);
+    }
+    .emp-name-input::placeholder, .emp-email-input::placeholder {
+      color: #3A7880; font-weight: 600;
+    }
+    .emp-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+    .btn-sched {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(23,188,168,0.06); border: 1px solid rgba(23,188,168,0.2);
+      border-radius: 8px; color: #5BBFCC; font: inherit;
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; cursor: pointer; padding: 6px 12px;
+      transition: 0.15s; white-space: nowrap;
+    }
+    .btn-sched::after { content: '▾'; display: inline-block; transition: transform 0.2s; }
+    .btn-sched.open { background: var(--accent-soft); border-color: rgba(23,188,168,0.4); color: var(--accent); }
+    .btn-sched.open::after { transform: rotate(-180deg); }
+    .btn-sched:hover { border-color: rgba(23,188,168,0.4); color: var(--text); }
+    .emp-schedule { border-top: 1px solid var(--line); display: none; }
+    .emp-schedule.open { display: block; }
+    .emp-schedule-inner { padding: 16px 14px; }
+    .s-sublabel {
+      font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #6BAAB8; margin-bottom: 10px; margin-top: 16px;
+    }
+    .s-sublabel:first-child { margin-top: 0; }
+    .staff-empty {
+      text-align: center; padding: 28px 16px;
+      color: var(--muted); font-size: 13px; font-weight: 600;
+    }
+    .emp-add-form {
+      border: 1px dashed rgba(23,188,168,0.25); border-radius: var(--radius);
+      background: rgba(23,188,168,0.03); padding: 14px; margin-bottom: 12px;
+    }
+    .emp-add-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .emp-add-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .emp-name-input.invalid { border-color: var(--danger); }
+    .emp-sched-save {
+      display: block; margin-top: 16px;
+      min-height: 38px; border-radius: 10px;
+      border: 1px solid rgba(23,188,168,0.35);
+      background: var(--accent-grad);
+      color: #ffffff; font: inherit; font-size: 13px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      cursor: pointer; padding: 0 22px; transition: 0.15s;
+      box-shadow: 0 6px 20px rgba(23,188,168,0.2);
+    }
+    .emp-sched-save:hover { box-shadow: 0 10px 28px rgba(23,188,168,0.38); transform: translateY(-1px); }
+
+    /* ===== DASHBOARD ===== */
+    .dash-toolbar {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
+    }
+    .btn-add-widget {
+      min-height: 44px; padding: 0 28px; border-radius: 12px;
+      border: none;
+      background: var(--accent-grad);
+      color: #ffffff; font: inherit; font-size: 13px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      cursor: pointer; transition: 0.15s;
+      box-shadow: 0 8px 24px rgba(23,188,168,0.28);
+    }
+    .btn-add-widget:hover { box-shadow: 0 12px 32px rgba(23,188,168,0.44); transform: translateY(-1px); }
+    .widgets-empty {
+      text-align: center; padding: 64px 24px;
+      border: 1px dashed rgba(80,175,185,0.2); border-radius: var(--radius);
+      background: rgba(23,188,168,0.015);
+    }
+    .widgets-empty-icon { font-size: 44px; margin-bottom: 16px; opacity: 0.4; }
+    .widgets-empty-title {
+      font-family: "Unbounded", sans-serif; font-size: 15px;
+      text-transform: uppercase; letter-spacing: 0.05em; color: #b0c898; margin-bottom: 10px;
+    }
+    .widgets-empty-sub { font-size: 13px; color: var(--muted); line-height: 1.65; max-width: 320px; margin: 0 auto 26px; }
+    .widget-card {
+      display: flex; align-items: center; gap: 16px;
+      border: 1px solid var(--line); border-radius: var(--radius);
+      background: var(--card); padding: 18px 20px; margin-bottom: 10px; transition: 0.15s;
+    }
+    .widget-card:hover { border-color: rgba(80,175,185,0.4); }
+    .wcard-icon { font-size: 26px; flex: 0 0 auto; opacity: 0.65; }
+    .wcard-info { flex: 1; min-width: 0; }
+    .wcard-name { font-size: 15px; font-weight: 800; color: #e4f0cc; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wcard-meta { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .wcard-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+    .wcard-edit {
+      min-height: 36px; padding: 0 16px; border-radius: 9px;
+      border: 1px solid rgba(23,188,168,0.28);
+      background: linear-gradient(180deg,#0D1E28 0%,#071420 100%);
+      color: #4ABEC8; font: inherit; font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer; transition: 0.15s;
+    }
+    .wcard-edit:hover { border-color: rgba(23,188,168,0.6); color: var(--accent); }
+    .wcard-mini-btn {
+      min-height: 36px; padding: 0 12px; border-radius: 9px;
+      border: 1px solid var(--line);
+      background: var(--surface-elev);
+      color: var(--muted); font: inherit; font-size: 11px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: 0.15s;
+      white-space: nowrap;
+    }
+    .wcard-mini-btn:hover { border-color: var(--line-strong); color: var(--text); }
+    .wcard-iframe:hover { border-color: rgba(98,204,245,0.55); color: #62ccf5; }
+    .wcard-link:hover   { border-color: rgba(47,240,166,0.5); color: #17D4BE; }
+    /* widget name editable in editor */
+    .widget-name-field {
+      width: 100%; background: transparent; border: 1px solid transparent;
+      border-radius: 8px; outline: none; font-family: "Unbounded", sans-serif;
+      font-size: 18px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-strong); padding: 4px 8px; margin: 0 -8px;
+      transition: 0.15s;
+    }
+    .widget-name-field:hover { border-color: var(--line); }
+    .widget-name-field:focus { border-color: var(--accent); background: rgba(23,188,168,0.04); }
+    .widget-name-field::placeholder { color: #28606E; }
+
+    /* ===== QUESTIONS ===== */
+    .q-card {
+      border: 1px solid var(--line); border-radius: 12px;
+      background: var(--surface-elev); padding: 16px; margin-bottom: 10px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.16);
+    }
+    .q-header { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+    .q-text-input {
+      flex: 1; background: transparent; border: 1px solid var(--line);
+      border-radius: 8px; outline: none; font: inherit;
+      font-size: 14px; font-weight: 700; color: var(--text);
+      padding: 8px 12px; transition: 0.15s;
+    }
+    .q-text-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(23,188,168,0.12); }
+    .q-text-input::placeholder { color: #3A7880; }
+    .q-type-row { display: flex; gap: 6px; margin-bottom: 14px; }
+    .q-type-btn {
+      padding: 6px 14px; border-radius: 8px; border: 1px solid var(--line);
+      background: var(--surface-elev); color: var(--muted); font: inherit;
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; cursor: pointer; transition: 0.15s;
+    }
+    .q-type-btn.active { border-color: var(--accent); background: var(--accent-soft); color: #80DAEA; }
+    .q-free-hint {
+      font-size: 13px; color: var(--muted); padding: 12px 14px;
+      border: 1px dashed rgba(80,175,185,0.25); border-radius: 8px;
+    }
+
+    /* ===== COLLAPSIBLE CARDS ===== */
+    .settings-card.collapsible > h3 {
+      cursor: pointer; user-select: none;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0;
+    }
+    .card-toggle-btn {
+      flex: 0 0 20px; width: 20px; height: 20px;
+      background: rgba(80,175,185,0.1); border: 1px solid rgba(80,175,185,0.2);
+      border-radius: 5px; cursor: pointer;
+      color: #6BAAB8; padding: 2px;
+      display: flex; align-items: center; justify-content: center;
+      margin-left: auto; transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .card-toggle-btn svg { display: block; transition: transform 0.22s ease; }
+    .card-toggle-btn:hover {
+      background: rgba(23,188,168,0.14); border-color: rgba(23,188,168,0.4);
+      color: var(--accent);
+    }
+    .settings-card.collapsible.collapsed .card-toggle-btn svg { transform: rotate(-90deg); }
+    .settings-card.collapsible .card-body {
+      overflow: hidden;
+      max-height: 2000px;
+      transition: max-height 0.3s ease, margin-top 0.2s;
+      margin-top: 16px;
+    }
+    .settings-card.collapsible.collapsed .card-body {
+      max-height: 0; margin-top: 0;
+    }
+
+    /* ===== DURATION LIST ===== */
+    .dur-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .dur-label-inp {
+      flex: 1; background: var(--surface-elev); border: 1px solid var(--line); border-radius: 8px;
+      font: inherit; font-size: 13px; font-weight: 700; color: var(--text);
+      padding: 8px 10px; outline: none; transition: 0.15s;
+    }
+    .dur-label-inp:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(23,188,168,0.12); }
+    .dur-label-inp::placeholder { color: #3A7880; }
+    .dur-min-inp {
+      width: 76px; flex: 0 0 76px;
+      background: var(--surface-elev); border: 1px solid var(--line); border-radius: 8px;
+      font: inherit; font-size: 13px; font-weight: 700; color: var(--text);
+      padding: 8px 10px; outline: none; transition: 0.15s; text-align: center;
+    }
+    .dur-min-inp:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(23,188,168,0.12); }
+    .dur-min-unit {
+      font-size: 11px; color: var(--muted); font-weight: 700; flex: 0 0 auto; white-space: nowrap;
+    }
+
+    /* ===== ROUTING RULES ===== */
+    .rule-card {
+      border: 1px solid var(--line); border-radius: 12px;
+      background: var(--surface-elev); margin-bottom: 10px; overflow: hidden;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.16);
+    }
+    .rule-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 14px; background: rgba(23,188,168,0.025);
+      border-bottom: 1px solid rgba(80,175,185,0.1);
+    }
+    .rule-label-inp {
+      flex: 1; background: transparent; border: 1px solid transparent;
+      border-radius: 7px; font: inherit; font-size: 13px; font-weight: 700;
+      color: var(--text); padding: 4px 8px; outline: none; transition: 0.15s;
+    }
+    .rule-label-inp:hover { border-color: var(--line); }
+    .rule-label-inp:focus { border-color: var(--accent); background: rgba(23,188,168,0.04); }
+    .rule-label-inp::placeholder { color: #28606E; }
+    .rule-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .rule-logic-row {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 13px; color: var(--muted); font-weight: 700;
+    }
+    .rule-conds { display: flex; flex-direction: column; gap: 8px; }
+    .cond-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .rule-assign-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding-top: 12px; border-top: 1px solid rgba(80,175,185,0.1);
+    }
+    .rule-assign-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--muted); white-space: nowrap; flex: 0 0 auto;
+    }
+    .rule-sel {
+      background: #0a0e09; border: 1px solid var(--line); border-radius: 8px;
+      color: var(--text); font: inherit; font-size: 12px; font-weight: 700;
+      padding: 6px 10px; cursor: pointer; outline: none; transition: 0.15s;
+    }
+    .rule-sel:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(23,188,168,0.1); }
+    .rule-sel option { background: var(--surface-elev); }
+    .rule-sel-assign { flex: 1; max-width: 300px; }
+    .rule-hint {
+      font-size: 12px; color: var(--muted); padding: 10px 12px;
+      border: 1px dashed rgba(80,175,185,0.2); border-radius: 8px;
+    }
+
+    /* ===== CONTACT FIELDS ===== */
+    .cf-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 0; border-bottom: 1px solid rgba(80,175,185,0.08);
+    }
+    .cf-row:last-child { border-bottom: none; }
+    .cf-type-tag {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      color: #3A7880; background: rgba(80,175,185,0.07); border: 1px solid rgba(80,175,185,0.15);
+      border-radius: 5px; padding: 2px 7px; flex: 0 0 auto; white-space: nowrap;
+    }
+    .cf-label-inp {
+      flex: 1; background: transparent; border: 1px solid transparent;
+      border-radius: 7px; outline: none; font: inherit;
+      font-size: 13px; font-weight: 700; color: var(--text);
+      padding: 5px 8px; transition: 0.15s; min-width: 0;
+    }
+    .cf-label-inp:hover { border-color: var(--line); }
+    .cf-label-inp:focus { border-color: var(--accent); background: rgba(23,188,168,0.04); }
+    .cf-label-inp::placeholder { color: #28606E; }
+    .cf-label-inp:disabled { opacity: 0.45; cursor: default; }
+    .cf-pill {
+      font: inherit; font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 4px 10px; border-radius: 6px;
+      border: 1px solid var(--line); background: transparent; color: #3A7880;
+      cursor: pointer; transition: 0.15s; white-space: nowrap; flex: 0 0 auto;
+    }
+    .cf-pill.on-req  { border-color: rgba(255,95,126,0.4); background: rgba(255,95,126,0.08); color: #ff8fa5; }
+    .cf-pill.on-vis  { border-color: rgba(23,188,168,0.35); background: rgba(23,188,168,0.08); color: #5ABFC8; }
+    .cf-pill:hover { border-color: var(--line-strong); color: var(--text); }
+    .cf-drag-handle {
+      color: #28606E; cursor: grab; font-size: 15px; flex: 0 0 auto;
+      padding: 2px 2px; line-height: 1; transition: color 0.15s; user-select: none;
+    }
+    .cf-drag-handle:active { cursor: grabbing; }
+    .cf-drag-handle:hover { color: var(--muted); }
+    .cf-row.cf-dragging { opacity: 0.35; }
+    .cf-row.cf-over {
+      background: rgba(23,188,168,0.05);
+      outline: 1px solid rgba(23,188,168,0.25); border-radius: 8px;
+    }
+    .list-item { cursor: default; }
+    .list-item.opt-dragging { opacity: 0.35; }
+    .list-item.opt-over { outline: 1px solid rgba(23,188,168,0.3); border-radius: 10px; background: rgba(23,188,168,0.04); }
+    .opt-drag-handle {
+      color: #28606E; cursor: grab; font-size: 14px; flex: 0 0 auto;
+      padding: 0 4px; line-height: 1; user-select: none; transition: color 0.15s;
+    }
+    .opt-drag-handle:active { cursor: grabbing; }
+    .opt-drag-handle:hover { color: var(--muted); }
+
+    /* ===== TOGGLE SWITCH ===== */
+    .toggle-row {
+      display: flex; align-items: center; gap: 12px; padding: 6px 0;
+    }
+    .toggle-switch { position: relative; width: 44px; height: 24px; flex: 0 0 auto; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute; inset: 0; border-radius: 12px;
+      background: #0D1E28; border: 1px solid var(--line);
+      cursor: pointer; transition: 0.2s;
+    }
+    .toggle-track::after {
+      content: ''; position: absolute; left: 3px; top: 3px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #28606E; transition: 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-track { background: var(--accent-soft); border-color: var(--accent); }
+    .toggle-switch input:checked + .toggle-track::after { background: var(--accent); transform: translateX(20px); }
+    .toggle-label { font-size: 13px; font-weight: 700; color: #c0d0a8; }
+    .intg-divider { height: 1px; background: var(--line); margin: 18px 0; }
+    .intg-hint {
+      font-size: 12px; color: var(--muted); line-height: 1.55; margin-top: 6px;
+    }
+    .intg-badge {
+      display: inline-block; font-size: 10px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      padding: 2px 8px; border-radius: 6px; margin-left: 8px; vertical-align: middle;
+    }
+    .badge-mts { background: rgba(0,100,255,0.15); color: #7aabff; border: 1px solid rgba(0,100,255,0.25); }
+    .badge-tg  { background: rgba(41,182,246,0.12); color: #62ccf5; border: 1px solid rgba(41,182,246,0.25); }
+    .badge-cal { background: rgba(23,188,168,0.12); color: #3DC4CC; border: 1px solid rgba(23,188,168,0.25); }
+    .calendar-intg-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .calendar-provider-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-elev);
+      padding: 12px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.14);
+    }
+    .calendar-provider-card h4 {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9fc086;
+      margin-bottom: 10px;
+    }
+    .calendar-provider-card .s-field { margin-bottom: 10px; }
+    .calendar-provider-card .s-field:last-child { margin-bottom: 0; }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.78); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.22s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      width: 100%; max-width: 560px; max-height: 88vh;
+      background: #0A1418; border: 1px solid rgba(23,188,168,0.28);
+      border-radius: 20px; display: flex; flex-direction: column;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.7);
+      transform: translateY(14px) scale(0.98); transition: transform 0.22s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+    .modal-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 22px 24px 18px; border-bottom: 1px solid var(--line);
+      flex: 0 0 auto;
+    }
+    .modal-title {
+      font-family: "Unbounded", sans-serif; font-size: 14px;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-strong);
+    }
+    .modal-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .snippet-modal-value {
+      width: 100%;
+      min-height: 210px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-elev);
+      color: var(--text);
+      font-family: "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 12px 14px;
+      outline: none;
+    }
+    .btn-modal-open-link {
+      margin-right: auto;
+      min-height: 40px;
+      border-radius: 10px;
+      border: 1px solid rgba(47,240,166,0.38);
+      background: rgba(47,240,166,0.08);
+      color: #79e7be;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      padding: 0 16px;
+      transition: 0.15s;
+    }
+    .btn-modal-open-link:hover {
+      border-color: rgba(47,240,166,0.66);
+      color: #b7f6e0;
+    }
+    .modal-close {
+      background: none; border: none; color: var(--muted);
+      font-size: 24px; line-height: 1; cursor: pointer;
+      padding: 0 4px; transition: 0.15s; flex: 0 0 auto; margin-top: -2px;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-body { flex: 1; overflow-y: auto; padding: 22px 24px; }
+    .modal-footer {
+      display: flex; justify-content: flex-end; gap: 10px;
+      padding: 16px 24px; border-top: 1px solid var(--line); flex: 0 0 auto;
+    }
+    .btn-modal-cancel {
+      min-height: 40px; border-radius: 10px; border: 1px solid var(--line);
+      background: transparent; color: var(--muted);
+      font: inherit; font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      cursor: pointer; padding: 0 20px; transition: 0.15s;
+    }
+    .btn-modal-cancel:hover { border-color: var(--line-strong); color: var(--text); }
+    .btn-modal-save {
+      min-height: 40px; border-radius: 10px; border: none;
+      background: var(--accent-grad);
+      color: #ffffff; font: inherit; font-size: 13px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      cursor: pointer; padding: 0 26px; transition: 0.15s;
+      box-shadow: 0 6px 20px rgba(23,188,168,0.28);
+    }
+    .btn-modal-save:hover { box-shadow: 0 10px 30px rgba(23,188,168,0.44); transform: translateY(-1px); }
+
+    /* ===== GENERATE CODE BUTTON ===== */
+    .sb-generate-wrap { padding: 8px 8px 4px; }
+    .btn-generate {
+      width: 100%; min-height: 42px; border-radius: 10px;
+      border: 1px solid rgba(23,188,168,0.3);
+      background: rgba(23,188,168,0.07);
+      color: #3DC4CC; font: inherit; font-size: 12px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      cursor: pointer; transition: 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .btn-generate:not(:disabled):hover {
+      background: var(--accent-grad);
+      color: #ffffff; border-color: transparent;
+      box-shadow: 0 8px 24px rgba(23,188,168,0.32);
+      transform: translateY(-1px);
+    }
+    .btn-generate:disabled {
+      opacity: 0.3; cursor: not-allowed;
+      background: transparent; color: var(--muted);
+      border-color: var(--line);
+    }
+    .generate-hint {
+      font-size: 10px; color: var(--hint-success); line-height: 1.55;
+      text-align: center; margin-top: 7px; padding: 0 6px;
+    }
+    /* share link */
+    .share-link-row { display: flex; gap: 8px; align-items: center; }
+    .share-link-inp {
+      flex: 1; border: 1px solid var(--line); border-radius: 10px;
+      background: var(--surface-elev); padding: 9px 12px;
+      font-family: "Courier New", monospace; font-size: 11px; color: #9ec87e;
+      outline: none; min-width: 0;
+    }
+
+    @media (max-width: 700px) {
+      .sidebar { display: none; }
+      .main { padding: 16px; }
+      .emp-fields { flex-direction: column; }
+      .dash-toolbar { flex-direction: column; align-items: stretch; gap: 12px; }
+      .widget-card { flex-direction: column; align-items: stretch; gap: 10px; }
+      .wcard-actions { flex-wrap: wrap; }
+      .calendar-intg-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════ AUTH ═══════════════ -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <img src="Logo_SM.png" alt="sMartMeeting" style="height:52px;border-radius:10px;background:#fff;padding:6px 14px;display:block;margin-bottom:6px" />
+      <p>Панель управления виджетом</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Войти</button>
+      <button class="auth-tab" data-tab="register">Регистрация</button>
+    </div>
+    <div class="auth-body">
+      <form class="auth-form active" id="loginForm" novalidate>
+        <div class="f-group">
+          <label for="loginEmail">Email</label>
+          <input id="loginEmail" type="email" placeholder="name@company.ru" autocomplete="email" />
+          <div class="f-error" id="loginEmailErr"></div>
+        </div>
+        <div class="f-group">
+          <label for="loginPass">Пароль</label>
+          <div class="pass-wrap">
+            <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" />
+            <button type="button" class="pass-eye" data-for="loginPass">👁</button>
+          </div>
+          <div class="f-error" id="loginPassErr"></div>
+        </div>
+        <button type="submit" class="btn-full accent-btn">Войти</button>
+        <div class="auth-demo">
+          <button type="button" id="demoBtn">Войти с демо-доступом</button>
+        </div>
+      </form>
+
+      <form class="auth-form" id="registerForm" novalidate>
+        <div class="f-group">
+          <label for="regName">Имя</label>
+          <input id="regName" type="text" placeholder="Иван Петров" autocomplete="name" />
+          <div class="f-error" id="regNameErr"></div>
+        </div>
+        <div class="f-group">
+          <label for="regEmail">Email</label>
+          <input id="regEmail" type="email" placeholder="name@company.ru" autocomplete="email" />
+          <div class="f-error" id="regEmailErr"></div>
+        </div>
+        <div class="f-group">
+          <label for="regPass">Пароль</label>
+          <div class="pass-wrap">
+            <input id="regPass" type="password" placeholder="Минимум 8 символов" autocomplete="new-password" />
+            <button type="button" class="pass-eye" data-for="regPass">👁</button>
+          </div>
+          <div class="f-error" id="regPassErr"></div>
+        </div>
+        <div class="f-group">
+          <label for="regPass2">Повторите пароль</label>
+          <div class="pass-wrap">
+            <input id="regPass2" type="password" placeholder="••••••••" autocomplete="new-password" />
+            <button type="button" class="pass-eye" data-for="regPass2">👁</button>
+          </div>
+          <div class="f-error" id="regPass2Err"></div>
+        </div>
+        <button type="submit" class="btn-full accent-btn">Зарегистрироваться</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ APP ═══════════════ -->
+<div id="appScreen">
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <img src="Logo_SM.png" alt="sMartMeeting" style="height:34px;border-radius:7px;background:#fff;padding:3px 10px;display:block;margin-bottom:4px" />
+      <p>Панель управления</p>
+    </div>
+    <nav class="sb-nav" id="dashNav">
+      <button class="sb-item active" id="navMyWidgets">
+        <span class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 7.5 12 3l9 4.5-9 4.5L3 7.5Z"></path><path d="M3 12l9 4.5 9-4.5"></path><path d="M3 16.5 12 21l9-4.5"></path></svg>
+        </span> Мои виджеты
+      </button>
+    </nav>
+    <nav class="sb-nav" id="editorNav" style="display:none">
+      <button class="sb-item" id="backToDashBtn" type="button">
+        <span class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 7.5 12 3l9 4.5-9 4.5L3 7.5Z"></path><path d="M3 12l9 4.5 9-4.5"></path><path d="M3 16.5 12 21l9-4.5"></path></svg>
+        </span> Мои виджеты
+      </button>
+      <div class="sb-divider"></div>
+      <button class="sb-item active" data-section="general">
+        <span class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 1-2 0 1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 1 0-2 1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 1 2 0 1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 .6 1 1.7 1.7 0 0 1 0 2 1.7 1.7 0 0 0-.6 1Z"></path></svg>
+        </span> Настройки виджета
+      </button>
+      <button class="sb-item" data-section="staff">
+        <span class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"></circle><path d="M5 19c0-3.2 2.8-5.2 7-5.2s7 2 7 5.2"></path></svg>
+        </span> Команда
+      </button>
+      <button class="sb-item" data-section="integrations">
+        <span class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M9 3v5"></path><path d="M15 3v5"></path><path d="M8 8h8v3a4 4 0 0 1-8 0Z"></path><path d="M12 15v6"></path></svg>
+        </span> Интеграции
+      </button>
+    </nav>
+    <div class="sb-generate-wrap">
+      <button class="btn-generate" id="generateCodeBtn" disabled>
+        <span>✦</span> Сгенерировать код
+      </button>
+      <div class="generate-hint" id="generateHint">Сначала настроить виджет</div>
+    </div>
+    <div class="sb-theme-wrap">
+      <div class="sb-theme-title">Тема интерфейса</div>
+      <div class="toggle-row">
+        <label class="toggle-switch">
+          <input type="checkbox" id="themeToggle" />
+          <span class="toggle-track"></span>
+        </label>
+        <span class="toggle-label" id="themeLabel">Тёмная</span>
+      </div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-user-name" id="sbUserName">—</div>
+      <div class="sb-user-email" id="sbUserEmail">—</div>
+      <button class="btn-logout" id="logoutBtn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4"></path><path d="m14 17 5-5-5-5"></path><path d="M19 12H9"></path></svg>
+        Выйти
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div id="dashSection">
+      <div class="dash-toolbar">
+        <div class="section-header" style="margin:0">
+          <h2 style="font-family:'Unbounded',sans-serif;font-size:20px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-strong)">Мои виджеты</h2>
+          <p style="margin-top:6px;font-size:13px;color:var(--muted)">Создавайте и управляйте виджетами для записи на встречи</p>
+        </div>
+        <button class="btn-add-widget" id="addWidgetBtn" type="button">+ Добавить виджет</button>
+      </div>
+      <div id="widgetsList"></div>
+    </div>
+
+    <!-- РЕДАКТОР ВИДЖЕТА -->
+    <div id="editorSections" style="display:none">
+
+    <!-- НАСТРОЙКИ ВИДЖЕТА -->
+    <div class="content-section active" id="secGeneral">
+      <div class="section-toolbar">
+        <div class="section-header" style="margin:0;flex:1;min-width:0">
+          <input type="text" id="cfgWidgetName" class="widget-name-field" placeholder="Название виджета" />
+          <p style="margin-top:4px;font-size:13px;color:var(--muted)">Настройки виджета</p>
+        </div>
+        <button class="preview-btn" id="previewBtn" style="margin-left:16px">👁 Предпросмотр</button>
+      </div>
+
+      <!-- 1. Текст виджета — что пользователь видит первым -->
+      <div class="settings-card">
+        <h3>Текст виджета</h3>
+        <div class="s-field">
+          <label>Заголовок</label>
+          <input type="text" id="cfgTitle" value="Выберите удобное время для встречи" />
+        </div>
+        <div class="s-field">
+          <label>Подзаголовок</label>
+          <textarea id="cfgSubtitle">Заполните короткую форму, и мы отправим подтверждение записи.</textarea>
+        </div>
+      </div>
+
+      <!-- 2. Параметры бронирования — ядро виджета: когда и как долго -->
+      <div class="settings-card">
+        <h3>Параметры бронирования</h3>
+        <div class="s-field">
+          <label>Количество доступных дней вперёд</label>
+          <input type="number" id="cfgDaysAhead" value="7" min="1" max="60" />
+        </div>
+        <div class="s-field" style="margin-top:14px">
+          <label>Варианты длительности встречи</label>
+          <div id="durationsList" style="margin-bottom:8px"></div>
+          <button class="btn-add" id="addDurationBtn">+ Добавить вариант</button>
+        </div>
+        <div class="s-field" style="margin-top:14px">
+          <label>Пауза между встречами (мин)</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="number" id="cfgBuffer" value="30" min="0" max="240" style="max-width:120px" />
+            <span style="font-size:12px;color:var(--muted);line-height:1.5">После завершения встречи это время будет заблокировано для новых бронирований</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Вопросы — квалификация лида, нужны до настройки маршрутизации -->
+      <div style="display:none">
+        <div class="check-grid" id="weekdaysGrid"></div>
+        <div class="check-grid" id="timeSlotsGrid"></div>
+        <div class="list-items" id="topicsList"></div>
+        <div class="list-items" id="teamList"></div>
+      </div>
+
+      <div class="settings-card">
+        <h3>Вопросы</h3>
+        <div id="questionsList"></div>
+        <button class="btn-add" id="addQuestionBtn">+ Добавить вопрос</button>
+      </div>
+
+      <!-- 4. Контактные данные — форма после вопросов -->
+      <div class="settings-card">
+        <h3>Контактные данные</h3>
+        <div id="contactFieldsList"></div>
+        <div style="margin-top:10px">
+          <button class="btn-add" id="addContactFieldBtn">+ Добавить поле</button>
+        </div>
+      </div>
+
+      <!-- 5. Маршрутизация — зависит от вопросов, настраивается после них -->
+      <div class="settings-card">
+        <h3>Маршрутизация встреч</h3>
+        <div id="routingRulesList"></div>
+        <button class="btn-add" id="addRoutingRuleBtn">+ Добавить правило</button>
+      </div>
+
+      <!-- 6. Внешний вид — косметика, после функциональных настроек -->
+      <div class="settings-card">
+        <h3>Внешний вид виджета</h3>
+        <div class="s-field">
+          <label>Акцентный цвет</label>
+          <div class="color-row">
+            <input type="color" id="cfgAccentColor" value="#17BCA8" />
+            <div class="s-field"><input type="text" id="cfgAccentHex" value="#17BCA8" placeholder="#17BCA8" /></div>
+          </div>
+        </div>
+        <div class="s-field">
+          <label>Фон карточки</label>
+          <div class="color-row">
+            <input type="color" id="cfgBgColor" value="#000000" />
+            <div class="s-field"><input type="text" id="cfgBgHex" value="#000000" placeholder="#000000" /></div>
+          </div>
+        </div>
+        <div class="s-field">
+          <label>Скругление углов (px)</label>
+          <input type="number" id="cfgRadius" value="20" min="0" max="40" />
+        </div>
+        <div class="s-field">
+          <label>Максимальная ширина виджета (px)</label>
+          <input type="number" id="cfgMaxWidth" value="940" min="320" max="1400" />
+        </div>
+      </div>
+
+      <!-- 7. Email-уведомления — операционная настройка, в самом конце -->
+      <div class="settings-card">
+        <h3>Email-уведомления</h3>
+        <div class="s-field">
+          <label>Email получателя заявок</label>
+          <input type="email" id="cfgNotifyEmail" placeholder="manager@company.ru" />
+        </div>
+        <div class="s-field">
+          <label>Тема письма</label>
+          <input type="text" id="cfgEmailSubject" value="Новая заявка на встречу" />
+        </div>
+      </div>
+
+      <!-- скрытые праздники (данные хранятся, но редактируются отдельно) -->
+      <div class="settings-card" style="display:none">
+        <h3>Фиксированные праздники (формат ДД-ММ)</h3>
+        <div class="list-items" id="fixedHolidaysList"></div>
+        <button class="btn-add" id="addFixedHolidayBtn">+ Добавить дату</button>
+      </div>
+      <div class="settings-card" style="display:none">
+        <h3>Перенесённые праздники (формат ГГГГ-ММ-ДД)</h3>
+        <div class="list-items" id="observedHolidaysList"></div>
+        <button class="btn-add" id="addObservedHolidayBtn">+ Добавить дату</button>
+      </div>
+
+      <div class="save-bar">
+        <button class="btn-reset" id="resetWidgetBtn">Сброс настроек</button>
+        <button class="btn-save accent" data-save="all">Сохранить</button>
+      </div>
+    </div>
+
+    <!-- КОМАНДА -->
+    <div class="content-section" id="secStaff">
+      <div class="section-header">
+        <h2>Команда</h2>
+        <p>Сотрудники, которые проводят встречи с клиентами</p>
+      </div>
+
+      <div class="settings-card">
+        <h3>Переменные участники</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.55">Сотрудники, которые назначаются на встречу в зависимости от условий маршрутизации. Расписание каждого настраивается отдельно.</p>
+        <div id="staffList"></div>
+        <div id="empAddForm" style="display:none" class="emp-add-form">
+          <div class="emp-add-fields">
+            <input type="text" id="empAddName" class="emp-name-input" placeholder="Имя сотрудника" />
+            <input type="email" id="empAddEmail" class="emp-email-input" placeholder="Email" />
+            <input type="tel" id="empAddPhone" class="emp-name-input" placeholder="Телефон" />
+            <input type="text" id="empAddTelegram" class="emp-name-input" placeholder="@Telegram" />
+          </div>
+          <div class="emp-add-actions">
+            <button type="button" id="empAddCancelBtn" class="btn-add">Отмена</button>
+            <button type="button" id="empAddConfirmBtn" class="btn-save accent">Добавить</button>
+          </div>
+        </div>
+        <button class="btn-add" id="addStaffBtn">+ Добавить сотрудника</button>
+      </div>
+
+      <div class="settings-card">
+        <h3>Обязательные участники</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.55">Всегда присутствуют на каждой встрече — независимо от правил маршрутизации. Например, руководитель или координатор.</p>
+        <div id="mandatoryList"></div>
+        <div id="mandatoryAddForm" style="display:none" class="emp-add-form">
+          <div class="emp-add-fields">
+            <input type="text" id="mandatoryAddName" class="emp-name-input" placeholder="Имя" />
+            <input type="email" id="mandatoryAddEmail" class="emp-email-input" placeholder="Email" />
+            <input type="tel" id="mandatoryAddPhone" class="emp-name-input" placeholder="Телефон" />
+            <input type="text" id="mandatoryAddTelegram" class="emp-name-input" placeholder="@Telegram" />
+          </div>
+          <div class="emp-add-actions">
+            <button type="button" id="mandatoryAddCancelBtn" class="btn-add">Отмена</button>
+            <button type="button" id="mandatoryAddConfirmBtn" class="btn-save accent">Добавить</button>
+          </div>
+        </div>
+        <button class="btn-add" id="addMandatoryBtn">+ Добавить участника</button>
+      </div>
+    </div>
+
+    <!-- ИНТЕГРАЦИИ -->
+    <div class="content-section" id="secIntegrations">
+      <div class="section-header">
+        <h2>Интеграции</h2>
+        <p>Подключите внешние сервисы для автоматизации встреч и уведомлений</p>
+      </div>
+
+      <!-- МТС Линк -->
+      <div class="settings-card">
+        <h3>Интеграция с МТС Линк <span class="intg-badge badge-mts">МТС Линк</span></h3>
+        <div class="toggle-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="mtsEnabled" />
+            <span class="toggle-track"></span>
+          </label>
+          <span class="toggle-label">Включить интеграцию</span>
+        </div>
+        <div class="intg-divider"></div>
+        <div class="s-field">
+          <label>API-ключ</label>
+          <input type="text" id="mtsApiKey" placeholder="Вставьте API-ключ из личного кабинета МТС Линк" />
+          <div class="intg-hint">Получить ключ: Личный кабинет МТС Линк → Настройки → API</div>
+        </div>
+        <div class="s-field">
+          <label>ID пространства</label>
+          <input type="text" id="mtsSpaceId" placeholder="Например: space_xxxxxxxx" />
+        </div>
+        <div class="s-field">
+          <label>Длительность встречи по умолчанию (мин)</label>
+          <input type="number" id="mtsDuration" value="60" min="15" max="480" />
+        </div>
+        <div class="toggle-row" style="margin-top:4px">
+          <label class="toggle-switch">
+            <input type="checkbox" id="mtsAutoCreate" checked />
+            <span class="toggle-track"></span>
+          </label>
+          <span class="toggle-label">Автоматически создавать ссылку на конференцию при бронировании</span>
+        </div>
+        <div class="save-bar" style="margin-top:14px">
+          <button class="btn-save accent" data-save="mts">Сохранить</button>
+        </div>
+      </div>
+
+      <!-- Telegram -->
+      <div class="settings-card">
+        <h3>Интеграция с Telegram <span class="intg-badge badge-tg">Telegram</span></h3>
+        <div class="toggle-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="tgEnabled" />
+            <span class="toggle-track"></span>
+          </label>
+          <span class="toggle-label">Включить интеграцию</span>
+        </div>
+        <div class="intg-divider"></div>
+        <div class="s-field">
+          <label>Токен бота</label>
+          <input type="text" id="tgBotToken" placeholder="123456789:AABBccDDeeFFggHH..." />
+          <div class="intg-hint">Создать бота и получить токен: @BotFather в Telegram</div>
+        </div>
+        <div class="s-field">
+          <label>ID чата или @username канала</label>
+          <input type="text" id="tgChatId" placeholder="-100123456789 или @mychannel" />
+          <div class="intg-hint">Для группы/канала бот должен быть добавлен как администратор</div>
+        </div>
+        <div class="s-field">
+          <label>Шаблон уведомления организатору</label>
+          <textarea id="tgTemplateOrganizer" style="min-height:110px">Новая запись на встречу ✨
+
+👤 Клиент: {{name}}
+📧 Email: {{email}}
+📅 Дата и время: {{date}} в {{time}}
+🎯 Тема встречи: {{topic}}
+👥 Команда клиента: {{team}}
+
+Проверьте детали и подтвердите встречу.</textarea>
+          <div class="intg-hint">Доступные переменные: {{name}}, {{email}}, {{date}}, {{time}}, {{topic}}, {{team}}</div>
+        </div>
+        <div class="s-field">
+          <label>Шаблон уведомления клиенту</label>
+          <textarea id="tgTemplateClient" style="min-height:110px">Здравствуйте, {{name}}!
+
+Вы успешно записались на встречу.
+📅 Дата и время: {{date}} в {{time}}
+🎯 Тема: {{topic}}
+
+Если планы изменятся, пожалуйста, предупредите заранее.</textarea>
+          <div class="intg-hint">Доступные переменные: {{name}}, {{email}}, {{date}}, {{time}}, {{topic}}, {{team}}</div>
+        </div>
+        <div class="save-bar" style="margin-top:14px">
+          <button class="btn-save accent" data-save="telegram">Сохранить</button>
+        </div>
+      </div>
+
+      <!-- Календари -->
+      <div class="settings-card">
+        <h3>Интеграции календарей <span class="intg-badge badge-cal">Календари</span></h3>
+        <div class="toggle-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="calendarSyncEnabled" />
+            <span class="toggle-track"></span>
+          </label>
+          <span class="toggle-label">Автоматически создавать события после записи</span>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="calendarIncludeBooker" checked />
+            <span class="toggle-track"></span>
+          </label>
+          <span class="toggle-label">Добавлять в событие пользователя, который записался</span>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="calendarIncludeParticipants" checked />
+            <span class="toggle-track"></span>
+          </label>
+          <span class="toggle-label">Добавлять участников из поля «Email участников встречи»</span>
+        </div>
+        <div class="intg-hint">Выберите календари, которые используете. Для прототипа достаточно подключить нужные аккаунты.</div>
+
+        <div class="calendar-intg-grid">
+          <div class="calendar-provider-card">
+            <h4>Яндекс.Календарь</h4>
+            <div class="toggle-row">
+              <label class="toggle-switch">
+                <input type="checkbox" id="calYandexEnabled" />
+                <span class="toggle-track"></span>
+              </label>
+              <span class="toggle-label">Включить</span>
+            </div>
+            <div class="s-field">
+              <label>Логин/Email аккаунта</label>
+              <input type="text" id="calYandexAccount" placeholder="name@yandex.ru" />
+            </div>
+            <div class="s-field">
+              <label>Пароль приложения / токен</label>
+              <input type="password" id="calYandexToken" placeholder="Введите ключ доступа" />
+            </div>
+          </div>
+
+          <div class="calendar-provider-card">
+            <h4>Календарь Mail.ru</h4>
+            <div class="toggle-row">
+              <label class="toggle-switch">
+                <input type="checkbox" id="calMailruEnabled" />
+                <span class="toggle-track"></span>
+              </label>
+              <span class="toggle-label">Включить</span>
+            </div>
+            <div class="s-field">
+              <label>Логин/Email аккаунта</label>
+              <input type="text" id="calMailruAccount" placeholder="name@mail.ru" />
+            </div>
+            <div class="s-field">
+              <label>Пароль приложения / токен</label>
+              <input type="password" id="calMailruToken" placeholder="Введите ключ доступа" />
+            </div>
+          </div>
+
+          <div class="calendar-provider-card">
+            <h4>Календарь Outlook</h4>
+            <div class="toggle-row">
+              <label class="toggle-switch">
+                <input type="checkbox" id="calOutlookEnabled" />
+                <span class="toggle-track"></span>
+              </label>
+              <span class="toggle-label">Включить</span>
+            </div>
+            <div class="s-field">
+              <label>Рабочий email</label>
+              <input type="text" id="calOutlookAccount" placeholder="name@company.com" />
+            </div>
+            <div class="s-field">
+              <label>OAuth токен / ключ</label>
+              <input type="password" id="calOutlookToken" placeholder="Введите ключ доступа" />
+            </div>
+          </div>
+
+          <div class="calendar-provider-card">
+            <h4>Календарь Google</h4>
+            <div class="toggle-row">
+              <label class="toggle-switch">
+                <input type="checkbox" id="calGoogleEnabled" />
+                <span class="toggle-track"></span>
+              </label>
+              <span class="toggle-label">Включить</span>
+            </div>
+            <div class="s-field">
+              <label>Рабочий email</label>
+              <input type="text" id="calGoogleAccount" placeholder="name@gmail.com" />
+            </div>
+            <div class="s-field">
+              <label>OAuth токен / ключ</label>
+              <input type="password" id="calGoogleToken" placeholder="Введите ключ доступа" />
+            </div>
+          </div>
+        </div>
+        <div class="save-bar" style="margin-top:14px">
+          <button class="btn-save accent" data-save="calendar">Сохранить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMBED -->
+    <div class="content-section" id="secEmbed">
+      <div class="section-toolbar">
+        <div class="section-header" style="margin:0">
+          <h2>Готово к публикации</h2>
+          <p>Ссылка для отправки и код для встраивания на сайт</p>
+        </div>
+        <button class="preview-btn" id="previewBtnEmbed">👁 Предпросмотр</button>
+      </div>
+
+      <div class="settings-card">
+        <h3>Ссылка для отправки</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.55">Отправьте эту ссылку напрямую — получатель откроет форму записи без встраивания виджета на сайт</p>
+        <div class="share-link-row">
+          <input type="text" id="shareLink" class="share-link-inp" readonly />
+          <button class="btn-save" id="copyShareLinkBtn">Копировать</button>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3>Код для вставки на сайт</h3>
+        <div class="s-field" style="display:flex;gap:12px;align-items:flex-end">
+          <div class="s-field" style="margin:0;flex:1">
+            <label>Ширина</label>
+            <input type="text" id="embedWidth" value="100%" />
+          </div>
+          <div class="s-field" style="margin:0;flex:1">
+            <label>Высота (px)</label>
+            <input type="number" id="embedHeight" value="750" min="400" max="1400" />
+          </div>
+          <button class="btn-save accent" id="generateEmbedBtn" style="margin-bottom:0;white-space:nowrap">Обновить код</button>
+        </div>
+        <div style="margin-top:14px">
+          <div class="embed-tabs">
+            <button class="embed-tab active" data-embed="iframe">iframe</button>
+            <button class="embed-tab" data-embed="script">Script tag</button>
+          </div>
+          <div class="code-wrap">
+            <div class="code-block" id="codeBlock"></div>
+            <button class="btn-copy" id="copyBtn">Копировать</button>
+          </div>
+          <div class="embed-note">
+            Вставьте этот код в HTML вашего сайта в место, где должен появляться виджет. Виджет автоматически подхватит текущую конфигурацию при открытии.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- /editorSections -->
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════ SCHEDULE MODAL ═══════════════ -->
+<div class="modal-overlay" id="schedModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="schedModalTitle">Расписание</div>
+        <div class="modal-sub">Рабочие дни и доступные слоты сотрудника</div>
+      </div>
+      <button class="modal-close" id="schedModalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="s-sublabel">Рабочие дни</div>
+      <div class="check-grid" id="modalWdGrid"></div>
+      <div class="s-sublabel" style="margin-top:20px">Временные слоты</div>
+      <div class="check-grid" id="modalTsGrid"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" id="schedModalCancel">Отмена</button>
+      <button class="btn-modal-save" id="schedModalSave">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ LINK/CODE MODAL ═══════════════ -->
+<div class="modal-overlay" id="snippetModal">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="snippetModalTitle">Данные виджета</div>
+        <div class="modal-sub" id="snippetModalSub">Код или ссылка для публикации</div>
+      </div>
+      <button class="modal-close" id="snippetModalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <textarea id="snippetModalValue" class="snippet-modal-value" readonly></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-open-link" id="snippetModalOpenLink" style="display:none">Открыть ссылку</button>
+      <button class="btn-modal-cancel" id="snippetModalCancel">Закрыть</button>
+      <button class="btn-modal-save" id="snippetModalCopy">Копировать</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════ CONFIG ═══════════════
+const DEFAULT = {
+  title: 'Выберите удобное время для встречи',
+  subtitle: 'Заполните короткую форму, и мы отправим подтверждение записи.',
+  daysAhead: 7,
+  meetingDurations: [
+    { id: 'dur_30', label: '30 минут',   minutes: 30 },
+    { id: 'dur_60', label: '1 час',      minutes: 60 },
+    { id: 'dur_90', label: '1,5 часа',   minutes: 90 }
+  ],
+  bufferMinutes: 30,
+  maxWidth: 940,
+  weekdays: [1,2,3,4,5],
+  timeSlots: ['10:00','10:30','11:00','11:30','12:00','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'],
+  questions: [
+    {
+      id: 'q_topics',
+      text: 'Выберите тему демо',
+      type: 'choice',
+      options: ['Интерактивные лонгриды', 'Слайдовые курсы', 'Интерактивные тренажеры']
+    },
+    {
+      id: 'q_team',
+      text: 'Размер вашей команды',
+      type: 'choice',
+      options: ['1 человек', '3 человека', '6 и более человек']
+    }
+  ],
+  fixedHolidays: ['01-01','01-02','01-03','01-04','01-05','01-06','01-07','01-08','02-23','03-08','05-01','05-09','06-12','11-04'],
+  observedHolidays: ['2026-03-09','2026-05-11'],
+  accentColor: '#17BCA8',
+  bgColor: '#000000',
+  borderRadius: 20,
+  notifyEmail: '',
+  emailSubject: 'Новая заявка на встречу',
+  routingRules: [],
+  mandatoryParticipants: [],
+  contactFields: [
+    { id: 'firstName',    label: 'Имя',                        type: 'text',           required: true,  enabled: true  },
+    { id: 'lastName',     label: 'Фамилия',                    type: 'text',           required: true,  enabled: true  },
+    { id: 'email',        label: 'Email',                      type: 'email',          required: true,  enabled: true  },
+    { id: 'phone',        label: 'Телефон',                    type: 'tel',            required: true,  enabled: true  },
+    { id: 'telegram',     label: 'Telegram',                   type: 'text',           required: false, enabled: true  },
+    { id: 'participants', label: 'Email участников встречи',   type: 'participants',   required: false, enabled: true  },
+    { id: 'customMeeting',label: 'Своя ссылка на встречу',    type: 'custom-meeting', required: false, enabled: true  }
+  ],
+  staff: [],
+  mtsLink: {
+    enabled: false,
+    apiKey: '',
+    spaceId: '',
+    duration: 60,
+    autoCreate: true
+  },
+  telegram: {
+    enabled: false,
+    botToken: '',
+    chatId: '',
+    organizerTemplate: 'Новая запись на встречу ✨\n\n👤 Клиент: {{name}}\n📧 Email: {{email}}\n📅 Дата и время: {{date}} в {{time}}\n🎯 Тема встречи: {{topic}}\n👥 Команда клиента: {{team}}\n\nПроверьте детали и подтвердите встречу.',
+    clientTemplate: 'Здравствуйте, {{name}}!\n\nВы успешно записались на встречу.\n📅 Дата и время: {{date}} в {{time}}\n🎯 Тема: {{topic}}\n\nЕсли планы изменятся, пожалуйста, предупредите заранее.',
+    template: 'Новая запись на встречу ✨\n\n👤 Клиент: {{name}}\n📧 Email: {{email}}\n📅 Дата и время: {{date}} в {{time}}\n🎯 Тема встречи: {{topic}}\n👥 Команда клиента: {{team}}\n\nПроверьте детали и подтвердите встречу.'
+  },
+  calendarSync: {
+    enabled: false,
+    includeBooker: true,
+    includeParticipants: true,
+    providers: {
+      yandex:  { enabled: false, account: '', token: '' },
+      mailru:  { enabled: false, account: '', token: '' },
+      outlook: { enabled: false, account: '', token: '' },
+      google:  { enabled: false, account: '', token: '' }
+    }
+  }
+};
+
+const ALL_SLOTS = [];
+for (let h = 9; h <= 18; h++) {
+  ALL_SLOTS.push(pad(h) + ':00');
+  if (h < 18) ALL_SLOTS.push(pad(h) + ':30');
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+
+const WEEKDAY_NAMES = {0:'Вс',1:'Пн',2:'Вт',3:'Ср',4:'Чт',5:'Пт',6:'Сб'};
+
+// ═══════════════ STATE ═══════════════
+let cfg = deepClone(DEFAULT);
+let embedMode = 'iframe';
+let currentUser = null;
+let schedModalEmpIdx = -1;
+let widgets = [];
+let currentWidgetId = null;
+let snippetModalUrl = '';
+const THEME_STORAGE_KEY = 'smm_theme';
+
+function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+
+// ═══════════════ STORAGE ═══════════════
+function getUsers() { return JSON.parse(localStorage.getItem('smm_users') || '[]'); }
+function saveUsers(u) { localStorage.setItem('smm_users', JSON.stringify(u)); }
+function saveSession(u) { localStorage.setItem('smm_session', JSON.stringify(u)); }
+function clearSession() { localStorage.removeItem('smm_session'); }
+function loadSession() { try { return JSON.parse(localStorage.getItem('smm_session')); } catch { return null; } }
+function getWidgets() { try { return JSON.parse(localStorage.getItem('smm_widgets') || '[]'); } catch { return []; } }
+function saveWidgets() { localStorage.setItem('smm_widgets', JSON.stringify(widgets)); }
+function saveCfg() {
+  if (!currentWidgetId) return;
+  const idx = widgets.findIndex(w => w.id === currentWidgetId);
+  if (idx < 0) return;
+  widgets[idx].config = deepClone(cfg);
+  const nameField = document.getElementById('cfgWidgetName');
+  if (nameField && nameField.value.trim()) widgets[idx].name = nameField.value.trim();
+  saveWidgets();
+  checkGenerateReady();
+}
+
+// ═══════════════ THEME ═══════════════
+function normalizeTheme(theme) {
+  return theme === 'light' ? 'light' : 'dark';
+}
+
+function applyTheme(theme) {
+  const mode = normalizeTheme(theme);
+  document.documentElement.setAttribute('data-theme', mode);
+  const toggle = document.getElementById('themeToggle');
+  const label = document.getElementById('themeLabel');
+  if (toggle) toggle.checked = mode === 'light';
+  if (label) label.textContent = mode === 'light' ? 'Светлая' : 'Тёмная';
+  localStorage.setItem(THEME_STORAGE_KEY, mode);
+}
+
+function initTheme() {
+  const savedTheme = normalizeTheme(localStorage.getItem(THEME_STORAGE_KEY) || 'dark');
+  applyTheme(savedTheme);
+}
+
+// ═══════════════ TOAST ═══════════════
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+// ═══════════════ AUTH TABS ═══════════════
+document.querySelectorAll('.auth-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab === 'login' ? 'loginForm' : 'registerForm').classList.add('active');
+  });
+});
+
+// ═══════════════ PASSWORD TOGGLE ═══════════════
+document.querySelectorAll('.pass-eye').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const inp = document.getElementById(btn.dataset.for);
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+  });
+});
+
+function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+function fieldErr(id, msg) {
+  const inp = document.getElementById(id);
+  const err = document.getElementById(id + 'Err');
+  if (inp) inp.classList.toggle('invalid', Boolean(msg));
+  if (err) err.textContent = msg || '';
+}
+function clearErrs(ids) { ids.forEach(id => fieldErr(id, '')); }
+
+// ═══════════════ DEMO LOGIN ═══════════════
+document.getElementById('demoBtn').addEventListener('click', () => {
+  const users = getUsers();
+  let demo = users.find(u => u.email === 'demo@smartmeeting.app');
+  if (!demo) {
+    demo = {name:'Демо-пользователь', email:'demo@smartmeeting.app', password:'demo1234'};
+    users.push(demo);
+    saveUsers(users);
+  }
+  saveSession(demo);
+  enterApp(demo);
+});
+
+// ═══════════════ LOGIN ═══════════════
+document.getElementById('loginForm').addEventListener('submit', e => {
+  e.preventDefault();
+  clearErrs(['loginEmail','loginPass']);
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  let ok = true;
+  if (!validEmail(email)) { fieldErr('loginEmail', 'Введите корректный email'); ok = false; }
+  if (!pass) { fieldErr('loginPass', 'Введите пароль'); ok = false; }
+  if (!ok) return;
+  const user = getUsers().find(u => u.email === email && u.password === pass);
+  if (!user) { fieldErr('loginPass', 'Неверный email или пароль'); return; }
+  saveSession(user);
+  enterApp(user);
+});
+
+// ═══════════════ REGISTER ═══════════════
+document.getElementById('registerForm').addEventListener('submit', e => {
+  e.preventDefault();
+  clearErrs(['regName','regEmail','regPass','regPass2']);
+  const name  = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass  = document.getElementById('regPass').value;
+  const pass2 = document.getElementById('regPass2').value;
+  let ok = true;
+  if (name.length < 2)    { fieldErr('regName',  'Укажите имя'); ok = false; }
+  if (!validEmail(email)) { fieldErr('regEmail', 'Введите корректный email'); ok = false; }
+  if (pass.length < 8)    { fieldErr('regPass',  'Минимум 8 символов'); ok = false; }
+  if (pass !== pass2)     { fieldErr('regPass2', 'Пароли не совпадают'); ok = false; }
+  if (!ok) return;
+  const users = getUsers();
+  if (users.find(u => u.email === email)) { fieldErr('regEmail', 'Этот email уже зарегистрирован'); return; }
+  const user = {name, email, password: pass};
+  users.push(user);
+  saveUsers(users);
+  saveSession(user);
+  enterApp(user);
+});
+
+// ═══════════════ LOGOUT ═══════════════
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  clearSession();
+  currentUser = null;
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('appScreen').classList.remove('visible');
+});
+
+document.getElementById('themeToggle').addEventListener('change', e => {
+  applyTheme(e.target.checked ? 'light' : 'dark');
+});
+
+// ═══════════════ ENTER APP ═══════════════
+function enterApp(user) {
+  currentUser = user;
+  widgets = getWidgets();
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appScreen').classList.add('visible');
+  document.getElementById('sbUserName').textContent = user.name;
+  document.getElementById('sbUserEmail').textContent = user.email;
+  enterDashboard();
+}
+
+// ═══════════════ SIDEBAR NAV ═══════════════
+const SEC_MAP = {
+  general:      'secGeneral',
+  staff:        'secStaff',
+  integrations: 'secIntegrations'
+};
+
+document.querySelectorAll('#editorNav .sb-item[data-section]').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('#editorNav .sb-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    Object.values(SEC_MAP).forEach(id => document.getElementById(id).classList.remove('active'));
+    document.getElementById(SEC_MAP[item.dataset.section]).classList.add('active');
+  });
+});
+
+// ═══════════════ SAVE BUTTONS ═══════════════
+document.querySelectorAll('[data-save]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const sec = btn.dataset.save;
+    if (sec === 'all') {
+      ['general','schedule','contacts','routing','questions','holidays','appearance','notifications','mts','telegram','calendar'].forEach(s => collectSection(s));
+    } else {
+      collectSection(sec);
+    }
+    saveCfg();
+    renderEmbedCode();
+    toast('Настройки сохранены ✓');
+  });
+});
+
+// ═══════════════ POPULATE FORMS ═══════════════
+function populateForms() {
+  document.getElementById('cfgTitle').value     = cfg.title;
+  document.getElementById('cfgSubtitle').value  = cfg.subtitle;
+  document.getElementById('cfgDaysAhead').value = cfg.daysAhead;
+  document.getElementById('cfgBuffer').value    = cfg.bufferMinutes ?? 30;
+  renderDurationsList();
+  document.getElementById('cfgMaxWidth').value  = cfg.maxWidth;
+  renderWeekdays();
+  renderTimeSlots();
+  renderFixedHolidays();
+  renderObservedHolidays();
+  renderContactFields();
+  renderRoutingRules();
+  renderQuestions();
+  renderMandatoryList();
+  document.getElementById('cfgAccentColor').value = cfg.accentColor;
+  document.getElementById('cfgAccentHex').value   = cfg.accentColor;
+  document.getElementById('cfgBgColor').value     = cfg.bgColor;
+  document.getElementById('cfgBgHex').value       = cfg.bgColor;
+  document.getElementById('cfgRadius').value      = cfg.borderRadius;
+  document.getElementById('cfgNotifyEmail').value  = cfg.notifyEmail;
+  document.getElementById('cfgEmailSubject').value = cfg.emailSubject;
+  // МТС Линк
+  document.getElementById('mtsEnabled').checked    = cfg.mtsLink.enabled;
+  document.getElementById('mtsApiKey').value        = cfg.mtsLink.apiKey;
+  document.getElementById('mtsSpaceId').value       = cfg.mtsLink.spaceId;
+  document.getElementById('mtsDuration').value      = cfg.mtsLink.duration;
+  document.getElementById('mtsAutoCreate').checked  = cfg.mtsLink.autoCreate;
+  // Telegram
+  if (!cfg.telegram) cfg.telegram = deepClone(DEFAULT.telegram);
+  if (!cfg.telegram.organizerTemplate) cfg.telegram.organizerTemplate = cfg.telegram.template || DEFAULT.telegram.organizerTemplate;
+  if (!cfg.telegram.clientTemplate) cfg.telegram.clientTemplate = DEFAULT.telegram.clientTemplate;
+  if (!cfg.telegram.template) cfg.telegram.template = cfg.telegram.organizerTemplate;
+  document.getElementById('tgEnabled').checked      = cfg.telegram.enabled;
+  document.getElementById('tgBotToken').value        = cfg.telegram.botToken;
+  document.getElementById('tgChatId').value          = cfg.telegram.chatId;
+  document.getElementById('tgTemplateOrganizer').value = cfg.telegram.organizerTemplate;
+  document.getElementById('tgTemplateClient').value    = cfg.telegram.clientTemplate;
+  if (!cfg.calendarSync) cfg.calendarSync = deepClone(DEFAULT.calendarSync);
+  if (!cfg.calendarSync.providers) cfg.calendarSync.providers = deepClone(DEFAULT.calendarSync.providers);
+  const providers = cfg.calendarSync.providers;
+  document.getElementById('calendarSyncEnabled').checked      = !!cfg.calendarSync.enabled;
+  document.getElementById('calendarIncludeBooker').checked    = cfg.calendarSync.includeBooker !== false;
+  document.getElementById('calendarIncludeParticipants').checked = cfg.calendarSync.includeParticipants !== false;
+  document.getElementById('calYandexEnabled').checked = !!providers.yandex?.enabled;
+  document.getElementById('calYandexAccount').value   = providers.yandex?.account || '';
+  document.getElementById('calYandexToken').value     = providers.yandex?.token || '';
+  document.getElementById('calMailruEnabled').checked = !!providers.mailru?.enabled;
+  document.getElementById('calMailruAccount').value   = providers.mailru?.account || '';
+  document.getElementById('calMailruToken').value     = providers.mailru?.token || '';
+  document.getElementById('calOutlookEnabled').checked = !!providers.outlook?.enabled;
+  document.getElementById('calOutlookAccount').value   = providers.outlook?.account || '';
+  document.getElementById('calOutlookToken').value     = providers.outlook?.token || '';
+  document.getElementById('calGoogleEnabled').checked = !!providers.google?.enabled;
+  document.getElementById('calGoogleAccount').value   = providers.google?.account || '';
+  document.getElementById('calGoogleToken').value     = providers.google?.token || '';
+  renderStaffList();
+}
+
+// ═══════════════ STAFF ═══════════════
+function renderStaffList() {
+  const container = document.getElementById('staffList');
+  container.innerHTML = '';
+  if (!cfg.staff.length) {
+    container.innerHTML = '<div class="staff-empty">Нет сотрудников — добавьте первого</div>';
+    return;
+  }
+  cfg.staff.forEach((emp, i) => container.appendChild(makeEmpCard(emp, i)));
+}
+
+function makeEmpCard(emp, i) {
+  const card = document.createElement('div');
+  card.className = 'emp-card';
+
+  const header = document.createElement('div');
+  header.className = 'emp-header';
+
+  const fields = document.createElement('div');
+  fields.className = 'emp-fields';
+
+  const nameInp = document.createElement('input');
+  nameInp.type = 'text'; nameInp.className = 'emp-name-input';
+  nameInp.placeholder = 'Имя сотрудника'; nameInp.value = emp.name;
+  nameInp.addEventListener('blur', () => { cfg.staff[i].name = nameInp.value.trim(); saveCfg(); });
+
+  const emailInp = document.createElement('input');
+  emailInp.type = 'email'; emailInp.className = 'emp-email-input';
+  emailInp.placeholder = 'Email'; emailInp.value = emp.email || '';
+  emailInp.addEventListener('blur', () => { cfg.staff[i].email = emailInp.value.trim(); saveCfg(); });
+
+  const phoneInp = document.createElement('input');
+  phoneInp.type = 'tel'; phoneInp.className = 'emp-name-input';
+  phoneInp.placeholder = 'Телефон'; phoneInp.value = emp.phone || '';
+  phoneInp.addEventListener('blur', () => { cfg.staff[i].phone = phoneInp.value.trim(); saveCfg(); });
+
+  const tgInp = document.createElement('input');
+  tgInp.type = 'text'; tgInp.className = 'emp-name-input';
+  tgInp.placeholder = '@Telegram'; tgInp.value = emp.telegram || '';
+  tgInp.addEventListener('blur', () => { cfg.staff[i].telegram = tgInp.value.trim(); saveCfg(); });
+
+  fields.append(nameInp, emailInp, phoneInp, tgInp);
+
+  const actions = document.createElement('div');
+  actions.className = 'emp-actions';
+
+  const schedBtn = document.createElement('button');
+  schedBtn.type = 'button'; schedBtn.className = 'btn-sched';
+  schedBtn.textContent = 'Настройки расписания';
+  schedBtn.addEventListener('click', () => openSchedModal(emp, i));
+
+  const delBtn = document.createElement('button');
+  delBtn.type = 'button'; delBtn.className = 'list-item-del'; delBtn.innerHTML = '&times;';
+  delBtn.addEventListener('click', () => { cfg.staff.splice(i, 1); saveCfg(); renderStaffList(); });
+
+  actions.append(schedBtn, delBtn);
+  header.append(fields, actions);
+  card.appendChild(header);
+  return card;
+}
+
+// ═══════════════ SCHEDULE MODAL ═══════════════
+function openSchedModal(emp, i) {
+  schedModalEmpIdx = i;
+  document.getElementById('schedModalTitle').textContent = emp.name || 'Сотрудник';
+
+  const wdGrid = document.getElementById('modalWdGrid');
+  wdGrid.innerHTML = '';
+  [1,2,3,4,5,6,0].forEach(d => {
+    const wrap = document.createElement('div'); wrap.className = 'check-item';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.id = 'mWd_' + d;
+    cb.checked = (emp.weekdays || [1,2,3,4,5]).includes(d);
+    const lbl = document.createElement('label');
+    lbl.htmlFor = cb.id; lbl.textContent = WEEKDAY_NAMES[d];
+    wrap.append(cb, lbl); wdGrid.appendChild(wrap);
+  });
+
+  const tsGrid = document.getElementById('modalTsGrid');
+  tsGrid.innerHTML = '';
+  const empSlots = emp.timeSlots || cfg.timeSlots;
+  ALL_SLOTS.forEach(slot => {
+    const wrap = document.createElement('div'); wrap.className = 'check-item';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.id = 'mTs_' + slot;
+    cb.checked = empSlots.includes(slot);
+    const lbl = document.createElement('label');
+    lbl.htmlFor = cb.id; lbl.textContent = slot;
+    wrap.append(cb, lbl); tsGrid.appendChild(wrap);
+  });
+
+  document.getElementById('schedModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSchedModal() {
+  document.getElementById('schedModal').classList.remove('open');
+  document.body.style.overflow = '';
+  schedModalEmpIdx = -1;
+}
+
+document.getElementById('schedModalClose').addEventListener('click', closeSchedModal);
+document.getElementById('schedModalCancel').addEventListener('click', closeSchedModal);
+document.getElementById('schedModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('schedModal')) closeSchedModal();
+});
+
+document.getElementById('schedModalSave').addEventListener('click', () => {
+  if (schedModalEmpIdx < 0) return;
+  cfg.staff[schedModalEmpIdx].weekdays  = [1,2,3,4,5,6,0].filter(d => document.getElementById('mWd_' + d)?.checked);
+  cfg.staff[schedModalEmpIdx].timeSlots = ALL_SLOTS.filter(s => document.getElementById('mTs_' + s)?.checked);
+  saveCfg();
+  toast('Расписание сохранено ✓');
+  closeSchedModal();
+});
+
+// ── Add employee form ──
+document.getElementById('addStaffBtn').addEventListener('click', () => {
+  document.getElementById('addStaffBtn').style.display = 'none';
+  const form = document.getElementById('empAddForm');
+  form.style.display = 'block';
+  document.getElementById('empAddName').value  = '';
+  document.getElementById('empAddEmail').value = '';
+  document.getElementById('empAddName').classList.remove('invalid');
+  document.getElementById('empAddName').focus();
+});
+
+document.getElementById('empAddCancelBtn').addEventListener('click', () => {
+  document.getElementById('empAddForm').style.display = 'none';
+  document.getElementById('addStaffBtn').style.display = '';
+});
+
+document.getElementById('empAddConfirmBtn').addEventListener('click', () => {
+  const nameInp = document.getElementById('empAddName');
+  const name    = nameInp.value.trim();
+  if (!name) { nameInp.classList.add('invalid'); nameInp.focus(); return; }
+  nameInp.classList.remove('invalid');
+  cfg.staff.push({
+    id:       'emp_' + Date.now(),
+    name,
+    email:    document.getElementById('empAddEmail').value.trim(),
+    phone:    document.getElementById('empAddPhone').value.trim(),
+    telegram: document.getElementById('empAddTelegram').value.trim(),
+    weekdays:  [1,2,3,4,5],
+    timeSlots: cfg.timeSlots.slice()
+  });
+  saveCfg();
+  document.getElementById('empAddForm').style.display  = 'none';
+  document.getElementById('addStaffBtn').style.display = '';
+  renderStaffList();
+});
+
+// ═══════════════ MANDATORY PARTICIPANTS ═══════════════
+function renderMandatoryList() {
+  if (!cfg.mandatoryParticipants) cfg.mandatoryParticipants = [];
+  const container = document.getElementById('mandatoryList');
+  container.innerHTML = '';
+  if (!cfg.mandatoryParticipants.length) {
+    container.innerHTML = '<div class="staff-empty">Нет обязательных участников</div>';
+    return;
+  }
+  cfg.mandatoryParticipants.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'emp-card';
+    const hdr = document.createElement('div');
+    hdr.className = 'emp-header';
+
+    const fields = document.createElement('div');
+    fields.className = 'emp-fields';
+
+    const nameInp = document.createElement('input');
+    nameInp.type = 'text'; nameInp.className = 'emp-name-input';
+    nameInp.placeholder = 'Имя'; nameInp.value = p.name;
+    nameInp.addEventListener('blur', () => { cfg.mandatoryParticipants[i].name = nameInp.value.trim(); saveCfg(); });
+
+    const emailInp = document.createElement('input');
+    emailInp.type = 'email'; emailInp.className = 'emp-email-input';
+    emailInp.placeholder = 'Email'; emailInp.value = p.email || '';
+    emailInp.addEventListener('blur', () => { cfg.mandatoryParticipants[i].email = emailInp.value.trim(); saveCfg(); });
+
+    const phoneInp = document.createElement('input');
+    phoneInp.type = 'tel'; phoneInp.className = 'emp-name-input';
+    phoneInp.placeholder = 'Телефон'; phoneInp.value = p.phone || '';
+    phoneInp.addEventListener('blur', () => { cfg.mandatoryParticipants[i].phone = phoneInp.value.trim(); saveCfg(); });
+
+    const tgInp = document.createElement('input');
+    tgInp.type = 'text'; tgInp.className = 'emp-name-input';
+    tgInp.placeholder = '@Telegram'; tgInp.value = p.telegram || '';
+    tgInp.addEventListener('blur', () => { cfg.mandatoryParticipants[i].telegram = tgInp.value.trim(); saveCfg(); });
+
+    fields.append(nameInp, emailInp, phoneInp, tgInp);
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button'; delBtn.className = 'list-item-del'; delBtn.innerHTML = '&times;';
+    delBtn.addEventListener('click', () => {
+      cfg.mandatoryParticipants.splice(i, 1); saveCfg(); renderMandatoryList();
+    });
+
+    hdr.append(fields, delBtn);
+    card.appendChild(hdr);
+    container.appendChild(card);
+  });
+}
+
+document.getElementById('addMandatoryBtn').addEventListener('click', () => {
+  document.getElementById('addMandatoryBtn').style.display = 'none';
+  const form = document.getElementById('mandatoryAddForm');
+  form.style.display = 'block';
+  document.getElementById('mandatoryAddName').value  = '';
+  document.getElementById('mandatoryAddEmail').value = '';
+  document.getElementById('mandatoryAddName').classList.remove('invalid');
+  document.getElementById('mandatoryAddName').focus();
+});
+
+document.getElementById('mandatoryAddCancelBtn').addEventListener('click', () => {
+  document.getElementById('mandatoryAddForm').style.display = 'none';
+  document.getElementById('addMandatoryBtn').style.display = '';
+});
+
+document.getElementById('mandatoryAddConfirmBtn').addEventListener('click', () => {
+  const nameInp  = document.getElementById('mandatoryAddName');
+  const emailInp = document.getElementById('mandatoryAddEmail');
+  const name  = nameInp.value.trim();
+  const email = emailInp.value.trim();
+  if (!name) { nameInp.classList.add('invalid'); nameInp.focus(); return; }
+  nameInp.classList.remove('invalid');
+  if (!cfg.mandatoryParticipants) cfg.mandatoryParticipants = [];
+  cfg.mandatoryParticipants.push({ id: 'mp_' + Date.now(), name, email });
+  saveCfg();
+  document.getElementById('mandatoryAddForm').style.display = 'none';
+  document.getElementById('addMandatoryBtn').style.display  = '';
+  renderMandatoryList();
+});
+
+// ═══════════════ MEETING DURATIONS ═══════════════
+function renderDurationsList() {
+  if (!cfg.meetingDurations) cfg.meetingDurations = deepClone(DEFAULT.meetingDurations);
+  const container = document.getElementById('durationsList');
+  container.innerHTML = '';
+  cfg.meetingDurations.forEach((d, i) => container.appendChild(makeDurRow(d, i)));
+}
+
+function makeDurRow(d, i) {
+  const row = document.createElement('div');
+  row.className = 'dur-row';
+
+  const labelInp = document.createElement('input');
+  labelInp.type = 'text'; labelInp.className = 'dur-label-inp';
+  labelInp.placeholder = 'Название (например, 1 час)';
+  labelInp.value = d.label;
+  labelInp.addEventListener('input', () => { cfg.meetingDurations[i].label = labelInp.value; });
+
+  const minInp = document.createElement('input');
+  minInp.type = 'number'; minInp.className = 'dur-min-inp';
+  minInp.min = 5; minInp.max = 480; minInp.value = d.minutes;
+  minInp.addEventListener('input', () => {
+    cfg.meetingDurations[i].minutes = Math.max(5, parseInt(minInp.value) || 30);
+  });
+
+  const unit = document.createElement('span');
+  unit.className = 'dur-min-unit'; unit.textContent = 'мин';
+
+  const delBtn = document.createElement('button');
+  delBtn.type = 'button'; delBtn.className = 'list-item-del'; delBtn.innerHTML = '&times;';
+  delBtn.addEventListener('click', () => { cfg.meetingDurations.splice(i, 1); renderDurationsList(); });
+
+  row.append(labelInp, minInp, unit, delBtn);
+  return row;
+}
+
+document.getElementById('addDurationBtn').addEventListener('click', () => {
+  if (!cfg.meetingDurations) cfg.meetingDurations = [];
+  cfg.meetingDurations.push({ id: 'dur_' + Date.now(), label: '', minutes: 60 });
+  renderDurationsList();
+  document.getElementById('durationsList').lastElementChild?.querySelector('.dur-label-inp')?.focus();
+});
+
+// ═══════════════ CONTACT FIELDS ═══════════════
+const CF_TYPE_LABELS = { text: 'текст', email: 'email', tel: 'телефон', participants: 'участники', 'custom-meeting': 'ссылка' };
+const CF_SYSTEM_IDS  = new Set(['firstName','lastName','email','phone','telegram','participants','customMeeting']);
+let _cfDragIdx = null;
+
+function renderContactFields() {
+  if (!cfg.contactFields || !cfg.contactFields.length) {
+    cfg.contactFields = deepClone(DEFAULT.contactFields);
+  }
+  const container = document.getElementById('contactFieldsList');
+  container.innerHTML = '';
+  cfg.contactFields.forEach((cf, i) => container.appendChild(makeContactFieldRow(cf, i)));
+}
+
+function makeContactFieldRow(cf, i) {
+  const row = document.createElement('div');
+  row.className = 'cf-row';
+  row.draggable = true;
+
+  // Drag handle
+  const handle = document.createElement('span');
+  handle.className = 'cf-drag-handle';
+  handle.textContent = '⠿';
+  handle.title = 'Перетащите для изменения порядка';
+
+  row.addEventListener('dragstart', e => {
+    _cfDragIdx = i;
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => row.classList.add('cf-dragging'), 0);
+  });
+  row.addEventListener('dragend', () => {
+    row.classList.remove('cf-dragging');
+    document.querySelectorAll('.cf-row').forEach(r => r.classList.remove('cf-over'));
+    _cfDragIdx = null;
+  });
+  row.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.cf-row').forEach(r => r.classList.remove('cf-over'));
+    if (_cfDragIdx !== i) row.classList.add('cf-over');
+  });
+  row.addEventListener('drop', e => {
+    e.preventDefault();
+    if (_cfDragIdx === null || _cfDragIdx === i) return;
+    const [moved] = cfg.contactFields.splice(_cfDragIdx, 1);
+    cfg.contactFields.splice(i, 0, moved);
+    renderContactFields();
+  });
+
+  const tag = document.createElement('span');
+  tag.className = 'cf-type-tag';
+  tag.textContent = CF_TYPE_LABELS[cf.type] || 'текст';
+
+  const labelInp = document.createElement('input');
+  labelInp.type = 'text'; labelInp.className = 'cf-label-inp';
+  labelInp.value = cf.label; labelInp.placeholder = 'Название поля';
+  labelInp.addEventListener('input', () => { cfg.contactFields[i].label = labelInp.value; });
+  // Остановить всплытие dragstart с input, чтобы не мешал drag
+  labelInp.addEventListener('mousedown', e => e.stopPropagation());
+
+  const reqBtn = document.createElement('button');
+  reqBtn.type = 'button';
+  reqBtn.className = 'cf-pill' + (cf.required ? ' on-req' : '');
+  reqBtn.textContent = cf.required ? 'Обязательное' : 'Необязательное';
+  reqBtn.addEventListener('click', () => {
+    cfg.contactFields[i].required = !cfg.contactFields[i].required;
+    reqBtn.className = 'cf-pill' + (cfg.contactFields[i].required ? ' on-req' : '');
+    reqBtn.textContent = cfg.contactFields[i].required ? 'Обязательное' : 'Необязательное';
+  });
+
+  const visBtn = document.createElement('button');
+  visBtn.type = 'button';
+  visBtn.className = 'cf-pill' + (cf.enabled ? ' on-vis' : '');
+  visBtn.textContent = cf.enabled ? 'Включено' : 'Скрыто';
+  visBtn.addEventListener('click', () => {
+    cfg.contactFields[i].enabled = !cfg.contactFields[i].enabled;
+    visBtn.className = 'cf-pill' + (cfg.contactFields[i].enabled ? ' on-vis' : '');
+    visBtn.textContent = cfg.contactFields[i].enabled ? 'Включено' : 'Скрыто';
+  });
+
+  row.append(handle, tag, labelInp, reqBtn, visBtn);
+
+  if (!CF_SYSTEM_IDS.has(cf.id)) {
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button'; delBtn.className = 'list-item-del'; delBtn.innerHTML = '&times;';
+    delBtn.addEventListener('click', () => { cfg.contactFields.splice(i, 1); renderContactFields(); });
+    row.appendChild(delBtn);
+  }
+
+  return row;
+}
+
+document.getElementById('addContactFieldBtn').addEventListener('click', () => {
+  cfg.contactFields.push({ id: 'cf_' + Date.now(), label: '', type: 'text', required: false, enabled: true });
+  renderContactFields();
+  document.getElementById('contactFieldsList').lastElementChild?.querySelector('.cf-label-inp')?.focus();
+});
+
+// ═══════════════ ROUTING RULES ═══════════════
+function renderRoutingRules() {
+  if (!cfg.routingRules) cfg.routingRules = [];
+  const container = document.getElementById('routingRulesList');
+  container.innerHTML = '';
+  if (!cfg.routingRules.length) {
+    container.innerHTML = '<div class="staff-empty" style="padding:16px 0 8px">Правил нет — добавьте первое</div>';
+    return;
+  }
+  cfg.routingRules.forEach((rule, ri) => container.appendChild(makeRuleCard(rule, ri)));
+}
+
+function makeRuleCard(rule, ri) {
+  const choiceQs = (cfg.questions || []).filter(q => q.type === 'choice' && q.text.trim());
+  const staff    = cfg.staff || [];
+
+  const card = document.createElement('div');
+  card.className = 'rule-card';
+
+  // ── Header ──
+  const hdr = document.createElement('div');
+  hdr.className = 'rule-header';
+
+  const labelInp = document.createElement('input');
+  labelInp.type = 'text'; labelInp.className = 'rule-label-inp';
+  labelInp.placeholder = 'Название правила (необязательно)';
+  labelInp.value = rule.label || '';
+  labelInp.addEventListener('input', () => { cfg.routingRules[ri].label = labelInp.value; });
+
+  const delBtn = document.createElement('button');
+  delBtn.type = 'button'; delBtn.className = 'list-item-del'; delBtn.innerHTML = '&times;';
+  delBtn.addEventListener('click', () => { cfg.routingRules.splice(ri, 1); renderRoutingRules(); });
+
+  hdr.append(labelInp, delBtn);
+
+  // ── Body ──
+  const body = document.createElement('div');
+  body.className = 'rule-body';
+
+  // Logic row
+  const logicRow = document.createElement('div');
+  logicRow.className = 'rule-logic-row';
+  logicRow.appendChild(document.createTextNode('Если '));
+
+  const logicSel = document.createElement('select');
+  logicSel.className = 'rule-sel';
+  [['any','любое из'],['all','все из']].forEach(([v,l]) => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = l;
+    if ((rule.conditionLogic || 'any') === v) o.selected = true;
+    logicSel.appendChild(o);
+  });
+  logicSel.addEventListener('change', () => { cfg.routingRules[ri].conditionLogic = logicSel.value; });
+  logicRow.appendChild(logicSel);
+  logicRow.appendChild(document.createTextNode(' условий выполнено:'));
+
+  // Conditions
+  const condContainer = document.createElement('div');
+  condContainer.className = 'rule-conds';
+
+  function buildCondRow(cond, ci) {
+    const row = document.createElement('div');
+    row.className = 'cond-row';
+
+    if (!choiceQs.length) {
+      row.innerHTML = '<span class="rule-hint" style="flex:1">Добавьте вопросы с вариантами ответов в блок «Вопросы»</span>';
+      return row;
+    }
+
+    // Source
+    const srcSel = document.createElement('select');
+    srcSel.className = 'rule-sel';
+    const srcPh = document.createElement('option');
+    srcPh.value = ''; srcPh.textContent = '— Вопрос —';
+    if (!cond.sourceId) srcPh.selected = true;
+    srcSel.appendChild(srcPh);
+    choiceQs.forEach(q => {
+      const o = document.createElement('option');
+      o.value = q.id; o.textContent = q.text.length > 28 ? q.text.slice(0,26)+'…' : q.text;
+      if (cond.sourceId === q.id) o.selected = true;
+      srcSel.appendChild(o);
+    });
+
+    // Operator
+    const opSel = document.createElement('select');
+    opSel.className = 'rule-sel';
+    [['eq','равно'],['neq','не равно']].forEach(([v,l]) => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = l;
+      if ((cond.operator || 'eq') === v) o.selected = true;
+      opSel.appendChild(o);
+    });
+    opSel.addEventListener('change', () => { cfg.routingRules[ri].conditions[ci].operator = opSel.value; });
+
+    // Value (rebuilds when source changes)
+    const valWrap = document.createElement('span');
+
+    function buildValSel(qId) {
+      valWrap.innerHTML = '';
+      const q = choiceQs.find(x => x.id === qId);
+      if (!q) return;
+      const valSel = document.createElement('select');
+      valSel.className = 'rule-sel';
+      const ph = document.createElement('option');
+      ph.value = ''; ph.textContent = '— Значение —';
+      if (!cond.value) ph.selected = true;
+      valSel.appendChild(ph);
+      (q.options || []).forEach((opt, oi) => {
+        const o = document.createElement('option');
+        const key = 'opt_' + oi;
+        o.value = key; o.textContent = opt;
+        if (cond.value === key) o.selected = true;
+        valSel.appendChild(o);
+      });
+      valSel.addEventListener('change', () => { cfg.routingRules[ri].conditions[ci].value = valSel.value; });
+      valWrap.appendChild(valSel);
+    }
+
+    srcSel.addEventListener('change', () => {
+      cfg.routingRules[ri].conditions[ci].sourceId = srcSel.value;
+      cfg.routingRules[ri].conditions[ci].value    = '';
+      buildValSel(srcSel.value);
+    });
+    buildValSel(cond.sourceId);
+
+    const delCond = document.createElement('button');
+    delCond.type = 'button'; delCond.className = 'list-item-del'; delCond.innerHTML = '&times;';
+    delCond.addEventListener('click', () => { cfg.routingRules[ri].conditions.splice(ci, 1); renderRoutingRules(); });
+
+    row.append(srcSel, opSel, valWrap, delCond);
+    return row;
+  }
+
+  (rule.conditions || []).forEach((cond, ci) => condContainer.appendChild(buildCondRow(cond, ci)));
+
+  const addCondBtn = document.createElement('button');
+  addCondBtn.type = 'button'; addCondBtn.className = 'btn-add';
+  addCondBtn.textContent = '+ Добавить условие';
+  addCondBtn.addEventListener('click', () => {
+    if (!cfg.routingRules[ri].conditions) cfg.routingRules[ri].conditions = [];
+    cfg.routingRules[ri].conditions.push({ sourceId: '', operator: 'eq', value: '' });
+    renderRoutingRules();
+  });
+
+  // ── Assign row ──
+  const assignRow = document.createElement('div');
+  assignRow.className = 'rule-assign-row';
+
+  const assignLabel = document.createElement('span');
+  assignLabel.className = 'rule-assign-label';
+  assignLabel.textContent = 'Назначить встречу на:';
+
+  const assignSel = document.createElement('select');
+  assignSel.className = 'rule-sel rule-sel-assign';
+
+  const assignPh = document.createElement('option');
+  assignPh.value = '';
+  assignPh.textContent = staff.length ? '— Выберите менеджера —' : '— Добавьте сотрудников в «Команда» —';
+  if (!rule.assignTo) assignPh.selected = true;
+  assignSel.appendChild(assignPh);
+
+  staff.forEach(emp => {
+    const o = document.createElement('option');
+    o.value = emp.id; o.textContent = emp.name || '(без имени)';
+    if (rule.assignTo === emp.id) o.selected = true;
+    assignSel.appendChild(o);
+  });
+  assignSel.addEventListener('change', () => { cfg.routingRules[ri].assignTo = assignSel.value; });
+
+  assignRow.append(assignLabel, assignSel);
+  body.append(logicRow, condContainer, addCondBtn, assignRow);
+  card.append(hdr, body);
+  return card;
+}
+
+document.getElementById('addRoutingRuleBtn').addEventListener('click', () => {
+  if (!cfg.routingRules) cfg.routingRules = [];
+  cfg.routingRules.push({ id: 'rule_' + Date.now(), label: '', conditionLogic: 'any', conditions: [], assignTo: '' });
+  renderRoutingRules();
+  document.getElementById('routingRulesList').lastElementChild?.querySelector('.rule-label-inp')?.focus();
+});
+
+// ═══════════════ QUESTIONS ═══════════════
+function renderQuestions() {
+  const container = document.getElementById('questionsList');
+  container.innerHTML = '';
+  if (!cfg.questions.length) {
+    container.innerHTML = '<div class="staff-empty">Нет вопросов — добавьте первый</div>';
+    return;
+  }
+  cfg.questions.forEach((q, qi) => container.appendChild(makeQCard(q, qi)));
+}
+
+function makeQCard(q, qi) {
+  const card = document.createElement('div');
+  card.className = 'q-card';
+
+  // Question text + delete
+  const header = document.createElement('div');
+  header.className = 'q-header';
+  const textInp = document.createElement('input');
+  textInp.type = 'text'; textInp.className = 'q-text-input';
+  textInp.placeholder = 'Текст вопроса...'; textInp.value = q.text;
+  textInp.addEventListener('input', () => { cfg.questions[qi].text = textInp.value; });
+  const delBtn = document.createElement('button');
+  delBtn.type = 'button'; delBtn.className = 'list-item-del'; delBtn.innerHTML = '&times;';
+  delBtn.addEventListener('click', () => { cfg.questions.splice(qi, 1); renderQuestions(); });
+  header.append(textInp, delBtn);
+
+  // Type selector
+  const typeRow = document.createElement('div');
+  typeRow.className = 'q-type-row';
+  const choiceBtn = document.createElement('button');
+  choiceBtn.type = 'button'; choiceBtn.className = 'q-type-btn';
+  choiceBtn.textContent = 'Варианты ответов';
+  const freeBtn = document.createElement('button');
+  freeBtn.type = 'button'; freeBtn.className = 'q-type-btn';
+  freeBtn.textContent = 'Свободный ввод';
+  typeRow.append(choiceBtn, freeBtn);
+
+  // Options area (re-rendered on type switch)
+  const optionsArea = document.createElement('div');
+
+  function rebuildOptions() {
+    optionsArea.innerHTML = '';
+    if (cfg.questions[qi].type === 'choice') {
+      choiceBtn.classList.add('active'); freeBtn.classList.remove('active');
+      let _optDragIdx = null;
+      const optList = document.createElement('div');
+      optList.className = 'list-items';
+      (cfg.questions[qi].options || []).forEach((opt, oi) => {
+        const item = document.createElement('div');
+        item.className = 'list-item'; item.draggable = true;
+
+        const dragH = document.createElement('span');
+        dragH.className = 'opt-drag-handle'; dragH.textContent = '⠿';
+        dragH.title = 'Перетащите для изменения порядка';
+
+        item.addEventListener('dragstart', e => {
+          _optDragIdx = oi; e.dataTransfer.effectAllowed = 'move';
+          setTimeout(() => item.classList.add('opt-dragging'), 0);
+        });
+        item.addEventListener('dragend', () => {
+          item.classList.remove('opt-dragging');
+          optList.querySelectorAll('.list-item').forEach(r => r.classList.remove('opt-over'));
+          _optDragIdx = null;
+        });
+        item.addEventListener('dragover', e => {
+          e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+          optList.querySelectorAll('.list-item').forEach(r => r.classList.remove('opt-over'));
+          if (_optDragIdx !== oi) item.classList.add('opt-over');
+        });
+        item.addEventListener('drop', e => {
+          e.preventDefault();
+          if (_optDragIdx === null || _optDragIdx === oi) return;
+          const opts = cfg.questions[qi].options;
+          const [moved] = opts.splice(_optDragIdx, 1);
+          opts.splice(oi, 0, moved);
+          renderQuestions();
+        });
+
+        const inp = document.createElement('input');
+        inp.type = 'text'; inp.value = opt; inp.placeholder = 'Вариант ответа...';
+        inp.addEventListener('input', () => { cfg.questions[qi].options[oi] = inp.value; });
+        inp.addEventListener('mousedown', e => e.stopPropagation());
+
+        const del = document.createElement('button');
+        del.type = 'button'; del.className = 'list-item-del'; del.innerHTML = '&times;';
+        del.addEventListener('click', () => { cfg.questions[qi].options.splice(oi, 1); renderQuestions(); });
+
+        item.append(dragH, inp, del); optList.appendChild(item);
+      });
+      const addOptBtn = document.createElement('button');
+      addOptBtn.type = 'button'; addOptBtn.className = 'btn-add';
+      addOptBtn.textContent = '+ Добавить вариант';
+      addOptBtn.addEventListener('click', () => {
+        cfg.questions[qi].options = cfg.questions[qi].options || [];
+        cfg.questions[qi].options.push('');
+        renderQuestions();
+        const cards = document.getElementById('questionsList').children;
+        cards[qi]?.querySelectorAll('.list-item input').forEach((inp, idx, arr) => {
+          if (idx === arr.length - 1) inp.focus();
+        });
+      });
+      optionsArea.append(optList, addOptBtn);
+    } else {
+      choiceBtn.classList.remove('active'); freeBtn.classList.add('active');
+      const hint = document.createElement('div');
+      hint.className = 'q-free-hint';
+      hint.textContent = 'Пользователь введёт ответ в свободной форме';
+      optionsArea.appendChild(hint);
+    }
+  }
+
+  choiceBtn.addEventListener('click', () => {
+    cfg.questions[qi].type = 'choice';
+    if (!cfg.questions[qi].options) cfg.questions[qi].options = [];
+    rebuildOptions();
+  });
+  freeBtn.addEventListener('click', () => {
+    cfg.questions[qi].type = 'text';
+    rebuildOptions();
+  });
+
+  rebuildOptions();
+  card.append(header, typeRow, optionsArea);
+  return card;
+}
+
+document.getElementById('addQuestionBtn').addEventListener('click', () => {
+  cfg.questions.push({ id: 'q_' + Date.now(), text: '', type: 'choice', options: [] });
+  renderQuestions();
+  const cards = document.getElementById('questionsList').children;
+  cards[cards.length - 1]?.querySelector('.q-text-input')?.focus();
+});
+
+// ═══════════════ WEEKDAYS ═══════════════
+function renderWeekdays() {
+  const grid = document.getElementById('weekdaysGrid');
+  grid.innerHTML = '';
+  [1,2,3,4,5,6,0].forEach(d => {
+    const wrap = document.createElement('div');
+    wrap.className = 'check-item';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.id = 'wd_'+d;
+    cb.checked = cfg.weekdays.includes(d);
+    const lbl = document.createElement('label');
+    lbl.htmlFor = 'wd_'+d;
+    lbl.textContent = WEEKDAY_NAMES[d];
+    wrap.append(cb, lbl);
+    grid.appendChild(wrap);
+  });
+}
+
+// ═══════════════ TIME SLOTS ═══════════════
+function renderTimeSlots() {
+  const grid = document.getElementById('timeSlotsGrid');
+  grid.innerHTML = '';
+  ALL_SLOTS.forEach(slot => {
+    const wrap = document.createElement('div');
+    wrap.className = 'check-item';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.id = 'ts_'+slot;
+    cb.checked = cfg.timeSlots.includes(slot);
+    const lbl = document.createElement('label');
+    lbl.htmlFor = 'ts_'+slot;
+    lbl.textContent = slot;
+    wrap.append(cb, lbl);
+    grid.appendChild(wrap);
+  });
+}
+
+// ═══════════════ GENERIC LIST ITEM ═══════════════
+function makeItem(value, onInput, onDelete, placeholder) {
+  const wrap = document.createElement('div');
+  wrap.className = 'list-item';
+  const inp = document.createElement('input');
+  inp.type = 'text'; inp.value = value; inp.placeholder = placeholder || 'Введите значение...';
+  inp.addEventListener('input', () => onInput(inp.value));
+  const del = document.createElement('button');
+  del.type = 'button'; del.className = 'list-item-del'; del.innerHTML = '&times;';
+  del.addEventListener('click', onDelete);
+  wrap.append(inp, del);
+  return wrap;
+}
+
+// ═══════════════ TOPICS ═══════════════
+function renderTopicsList() {
+  const list = document.getElementById('topicsList');
+  if (!list) return;
+  if (!cfg.topics) cfg.topics = [];
+  list.innerHTML = '';
+  cfg.topics.forEach((t, i) => {
+    list.appendChild(makeItem(
+      t.label,
+      v => { cfg.topics[i].label = v; },
+      () => { cfg.topics.splice(i,1); renderTopicsList(); }
+    ));
+  });
+}
+const addTopicBtn = document.getElementById('addTopicBtn');
+if (addTopicBtn) {
+  addTopicBtn.addEventListener('click', () => {
+    if (!cfg.topics) cfg.topics = [];
+    cfg.topics.push({id:'topic_'+Date.now(), label:''});
+    renderTopicsList();
+    document.getElementById('topicsList')?.lastElementChild?.querySelector('input')?.focus();
+  });
+}
+
+// ═══════════════ TEAM ═══════════════
+function renderTeamList() {
+  const list = document.getElementById('teamList');
+  if (!list) return;
+  if (!cfg.teamSizes) cfg.teamSizes = [];
+  list.innerHTML = '';
+  cfg.teamSizes.forEach((t, i) => {
+    list.appendChild(makeItem(
+      t.label,
+      v => { cfg.teamSizes[i].label = v; },
+      () => { cfg.teamSizes.splice(i,1); renderTeamList(); }
+    ));
+  });
+}
+const addTeamBtn = document.getElementById('addTeamBtn');
+if (addTeamBtn) {
+  addTeamBtn.addEventListener('click', () => {
+    if (!cfg.teamSizes) cfg.teamSizes = [];
+    cfg.teamSizes.push({id:'team_'+Date.now(), label:''});
+    renderTeamList();
+    document.getElementById('teamList')?.lastElementChild?.querySelector('input')?.focus();
+  });
+}
+
+// ═══════════════ HOLIDAYS ═══════════════
+function renderFixedHolidays() {
+  const list = document.getElementById('fixedHolidaysList');
+  list.innerHTML = '';
+  cfg.fixedHolidays.forEach((d, i) => {
+    list.appendChild(makeItem(
+      d,
+      v => { cfg.fixedHolidays[i] = v; },
+      () => { cfg.fixedHolidays.splice(i,1); renderFixedHolidays(); },
+      'ДД-ММ, например 05-09'
+    ));
+  });
+}
+function renderObservedHolidays() {
+  const list = document.getElementById('observedHolidaysList');
+  list.innerHTML = '';
+  cfg.observedHolidays.forEach((d, i) => {
+    list.appendChild(makeItem(
+      d,
+      v => { cfg.observedHolidays[i] = v; },
+      () => { cfg.observedHolidays.splice(i,1); renderObservedHolidays(); },
+      'ГГГГ-ММ-ДД, например 2026-11-04'
+    ));
+  });
+}
+document.getElementById('addFixedHolidayBtn').addEventListener('click', () => {
+  cfg.fixedHolidays.push(''); renderFixedHolidays();
+  document.getElementById('fixedHolidaysList').lastElementChild?.querySelector('input')?.focus();
+});
+document.getElementById('addObservedHolidayBtn').addEventListener('click', () => {
+  cfg.observedHolidays.push(''); renderObservedHolidays();
+  document.getElementById('observedHolidaysList').lastElementChild?.querySelector('input')?.focus();
+});
+
+// ═══════════════ COLOR SYNC ═══════════════
+function syncColor(pickerId, hexId) {
+  document.getElementById(pickerId).addEventListener('input', e => {
+    document.getElementById(hexId).value = e.target.value;
+  });
+  document.getElementById(hexId).addEventListener('input', e => {
+    if (/^#[0-9a-fA-F]{6}$/.test(e.target.value))
+      document.getElementById(pickerId).value = e.target.value;
+  });
+}
+syncColor('cfgAccentColor','cfgAccentHex');
+syncColor('cfgBgColor','cfgBgHex');
+
+// ═══════════════ COLLECT SECTION ═══════════════
+function collectSection(sec) {
+  if (sec === 'general') {
+    cfg.title     = document.getElementById('cfgTitle').value.trim() || cfg.title;
+    cfg.subtitle  = document.getElementById('cfgSubtitle').value.trim();
+    cfg.daysAhead      = Math.max(1, parseInt(document.getElementById('cfgDaysAhead').value) || 7);
+    cfg.bufferMinutes  = Math.max(0, parseInt(document.getElementById('cfgBuffer').value) || 0);
+    cfg.meetingDurations = (cfg.meetingDurations || []).filter(d => d.label.trim() && d.minutes > 0);
+    if (!cfg.meetingDurations.length) cfg.meetingDurations = deepClone(DEFAULT.meetingDurations);
+    renderDurationsList();
+    cfg.maxWidth  = Math.max(320, parseInt(document.getElementById('cfgMaxWidth').value) || 940);
+  }
+  if (sec === 'schedule') {
+    cfg.weekdays  = [1,2,3,4,5,6,0].filter(d => document.getElementById('wd_'+d)?.checked);
+    cfg.timeSlots = ALL_SLOTS.filter(s => document.getElementById('ts_'+s)?.checked);
+  }
+  if (sec === 'routing') {
+    if (cfg.routingRules) {
+      cfg.routingRules = cfg.routingRules.filter(r => r.conditions && r.conditions.length && r.assignTo);
+    }
+  }
+  if (sec === 'contacts') {
+    cfg.contactFields = cfg.contactFields.filter(cf => CF_SYSTEM_IDS.has(cf.id) || cf.label.trim());
+    renderContactFields();
+  }
+  if (sec === 'questions') {
+    cfg.questions = cfg.questions
+      .filter(q => q.text.trim())
+      .map(q => ({
+        ...q,
+        options: q.type === 'choice' ? (q.options || []).filter(o => o.trim()) : []
+      }));
+    renderQuestions();
+  }
+  if (sec === 'holidays') {
+    cfg.fixedHolidays    = cfg.fixedHolidays.filter(d => d.trim());
+    cfg.observedHolidays = cfg.observedHolidays.filter(d => d.trim());
+    renderFixedHolidays(); renderObservedHolidays();
+  }
+  if (sec === 'appearance') {
+    cfg.accentColor  = document.getElementById('cfgAccentHex').value.trim() || '#17BCA8';
+    cfg.bgColor      = document.getElementById('cfgBgHex').value.trim() || '#000000';
+    cfg.borderRadius = Math.max(0, parseInt(document.getElementById('cfgRadius').value) || 20);
+  }
+  if (sec === 'notifications') {
+    cfg.notifyEmail  = document.getElementById('cfgNotifyEmail').value.trim();
+    cfg.emailSubject = document.getElementById('cfgEmailSubject').value.trim();
+  }
+  if (sec === 'mts') {
+    cfg.mtsLink.enabled    = document.getElementById('mtsEnabled').checked;
+    cfg.mtsLink.apiKey     = document.getElementById('mtsApiKey').value.trim();
+    cfg.mtsLink.spaceId    = document.getElementById('mtsSpaceId').value.trim();
+    cfg.mtsLink.duration   = Math.max(15, parseInt(document.getElementById('mtsDuration').value) || 60);
+    cfg.mtsLink.autoCreate = document.getElementById('mtsAutoCreate').checked;
+  }
+  if (sec === 'telegram') {
+    cfg.telegram.enabled   = document.getElementById('tgEnabled').checked;
+    cfg.telegram.botToken  = document.getElementById('tgBotToken').value.trim();
+    cfg.telegram.chatId    = document.getElementById('tgChatId').value.trim();
+    cfg.telegram.organizerTemplate = document.getElementById('tgTemplateOrganizer').value;
+    cfg.telegram.clientTemplate    = document.getElementById('tgTemplateClient').value;
+    // backward compatibility for older flows that still read `template`
+    cfg.telegram.template          = cfg.telegram.organizerTemplate;
+  }
+  if (sec === 'calendar') {
+    if (!cfg.calendarSync) cfg.calendarSync = deepClone(DEFAULT.calendarSync);
+    if (!cfg.calendarSync.providers) cfg.calendarSync.providers = deepClone(DEFAULT.calendarSync.providers);
+    cfg.calendarSync.enabled            = document.getElementById('calendarSyncEnabled').checked;
+    cfg.calendarSync.includeBooker      = document.getElementById('calendarIncludeBooker').checked;
+    cfg.calendarSync.includeParticipants = document.getElementById('calendarIncludeParticipants').checked;
+    cfg.calendarSync.providers.yandex = {
+      enabled: document.getElementById('calYandexEnabled').checked,
+      account: document.getElementById('calYandexAccount').value.trim(),
+      token:   document.getElementById('calYandexToken').value.trim()
+    };
+    cfg.calendarSync.providers.mailru = {
+      enabled: document.getElementById('calMailruEnabled').checked,
+      account: document.getElementById('calMailruAccount').value.trim(),
+      token:   document.getElementById('calMailruToken').value.trim()
+    };
+    cfg.calendarSync.providers.outlook = {
+      enabled: document.getElementById('calOutlookEnabled').checked,
+      account: document.getElementById('calOutlookAccount').value.trim(),
+      token:   document.getElementById('calOutlookToken').value.trim()
+    };
+    cfg.calendarSync.providers.google = {
+      enabled: document.getElementById('calGoogleEnabled').checked,
+      account: document.getElementById('calGoogleAccount').value.trim(),
+      token:   document.getElementById('calGoogleToken').value.trim()
+    };
+  }
+}
+
+// ═══════════════ EMBED TABS ═══════════════
+document.querySelectorAll('.embed-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.embed-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    embedMode = tab.dataset.embed;
+    renderEmbedCode();
+  });
+});
+
+// ═══════════════ GENERATE EMBED ═══════════════
+document.getElementById('generateEmbedBtn').addEventListener('click', () => {
+  renderEmbedCode();
+  toast('Код сгенерирован ✓');
+});
+
+function renderEmbedCode() {
+  const width  = (document.getElementById('embedWidth')?.value  || '100%').trim();
+  const height = parseInt(document.getElementById('embedHeight')?.value) || 750;
+  const baseUrl = 'https://smartmeeting.app/widget';
+
+  let code = '';
+  if (embedMode === 'iframe') {
+    code = buildWidgetIframe(cfg, width, height);
+  } else {
+    code =
+`<!-- sMartMeeting Widget -->
+<div id="smartmeeting-root"></div>
+<script>
+window.sMartMeetingConfig = ${JSON.stringify(cfg, null, 2)};
+<\/script>
+<script src="${baseUrl}.js" async defer><\/script>`;
+  }
+
+  document.getElementById('codeBlock').textContent = code;
+}
+
+// ═══════════════ COPY ═══════════════
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const code = document.getElementById('codeBlock').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Скопировано!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Копировать'; btn.classList.remove('copied'); }, 2200);
+  });
+});
+
+// ═══════════════ PREVIEW ═══════════════
+document.getElementById('previewBtn').addEventListener('click', () => {
+  // Сохраняем актуальное состояние всех секций перед предпросмотром
+  ['general','schedule','contacts','routing','questions','holidays','appearance','notifications','mts','telegram','calendar'].forEach(s => collectSection(s));
+  localStorage.setItem('smm_preview_cfg', JSON.stringify(cfg));
+  if (currentWidgetId) localStorage.setItem('smm_active_widget_id', currentWidgetId);
+  window.open('prototype-main-flow-space-console.html', '_blank');
+});
+
+// ═══════════════ GENERATE CODE ═══════════════
+function checkGenerateReady() {
+  const btn  = document.getElementById('generateCodeBtn');
+  const hint = document.getElementById('generateHint');
+  if (!btn) return;
+
+  const hasName  = (document.getElementById('cfgWidgetName')?.value || '').trim().length > 0;
+  const hasStaff = (cfg.staff && cfg.staff.length > 0) || (cfg.mandatoryParticipants && cfg.mandatoryParticipants.length > 0);
+
+  const mtsOk = !cfg.mtsLink?.enabled || (cfg.mtsLink.apiKey && cfg.mtsLink.spaceId);
+  const tgOk  = !cfg.telegram?.enabled || (cfg.telegram.botToken && cfg.telegram.chatId);
+  const calProviders = Object.values(cfg.calendarSync?.providers || {}).filter(p => p.enabled);
+  const calOk = !cfg.calendarSync?.enabled || (calProviders.length > 0 && calProviders.every(p => (p.account || '').trim()));
+  const intgOk = mtsOk && tgOk && calOk;
+
+  const ready = hasName && hasStaff && intgOk;
+  btn.disabled = !ready;
+
+  if (hint) {
+    const issues = [];
+    if (!hasName)  issues.push('название виджета');
+    if (!hasStaff) issues.push('участника команды');
+    if (!mtsOk)    issues.push('настройки МТС Линк (API-ключ и ID пространства)');
+    if (!tgOk)     issues.push('настройки Telegram (токен и ID чата)');
+    if (!calOk)    issues.push('календари (включите минимум одну интеграцию и укажите аккаунт)');
+    hint.textContent = issues.length
+      ? 'Сначала настроить виджет: заполните ' + issues.join(', ')
+      : 'Виджет готов. Можно сгенерировать код публикации.';
+  }
+}
+
+function buildWidgetUrl(config) {
+  const cfgB64 = btoa(unescape(encodeURIComponent(JSON.stringify(config))));
+  return 'https://smartmeeting.app/widget?cfg=' + cfgB64;
+}
+
+function buildWidgetIframe(config, width = '100%', height = 750) {
+  const src = buildWidgetUrl(config);
+  const br  = config.borderRadius ?? 20;
+  return `<iframe
+  src="${src}"
+  width="${width}"
+  height="${height}px"
+  frameborder="0"
+  allow="clipboard-write"
+  loading="lazy"
+  style="border:none;border-radius:${br}px;display:block;"
+  title="Запись на встречу"
+></iframe>`;
+}
+
+function renderShareLink() {
+  const url = buildWidgetUrl(cfg);
+  const inp    = document.getElementById('shareLink');
+  if (inp) inp.value = url;
+}
+
+document.getElementById('generateCodeBtn').addEventListener('click', () => {
+  ['general','schedule','contacts','routing','questions','holidays','appearance','notifications','mts','telegram','calendar'].forEach(s => collectSection(s));
+  saveCfg();
+  renderEmbedCode();
+  renderShareLink();
+  // Показываем secEmbed, снимаем активный класс с пунктов меню
+  Object.values(SEC_MAP).forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('secEmbed').classList.add('active');
+  document.querySelectorAll('#editorNav .sb-item').forEach(i => i.classList.remove('active'));
+  toast('Код сгенерирован ✓');
+});
+
+document.getElementById('copyShareLinkBtn').addEventListener('click', () => {
+  const inp = document.getElementById('shareLink');
+  if (!inp || !inp.value) return;
+  navigator.clipboard.writeText(inp.value).then(() => {
+    const btn = document.getElementById('copyShareLinkBtn');
+    const prev = btn.textContent;
+    btn.textContent = 'Скопировано!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = prev; btn.classList.remove('copied'); }, 2200);
+  });
+});
+
+document.getElementById('previewBtnEmbed').addEventListener('click', () => {
+  localStorage.setItem('smm_preview_cfg', JSON.stringify(cfg));
+  if (currentWidgetId) localStorage.setItem('smm_active_widget_id', currentWidgetId);
+  window.open('prototype-main-flow-space-console.html', '_blank');
+});
+
+// ═══════════════ LINK/CODE MODAL ═══════════════
+function openSnippetModal({ title, subtitle, value, type }) {
+  const modal = document.getElementById('snippetModal');
+  document.getElementById('snippetModalTitle').textContent = title || 'Данные виджета';
+  document.getElementById('snippetModalSub').textContent = subtitle || '';
+  const valueField = document.getElementById('snippetModalValue');
+  valueField.value = value || '';
+  valueField.scrollTop = 0;
+  snippetModalUrl = type === 'link' ? (value || '') : '';
+  document.getElementById('snippetModalOpenLink').style.display = snippetModalUrl ? '' : 'none';
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSnippetModal() {
+  const modal = document.getElementById('snippetModal');
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+  snippetModalUrl = '';
+}
+
+document.getElementById('snippetModalClose').addEventListener('click', closeSnippetModal);
+document.getElementById('snippetModalCancel').addEventListener('click', closeSnippetModal);
+document.getElementById('snippetModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('snippetModal')) closeSnippetModal();
+});
+
+document.getElementById('snippetModalCopy').addEventListener('click', () => {
+  const value = document.getElementById('snippetModalValue').value;
+  if (!value) return;
+  navigator.clipboard.writeText(value).then(() => {
+    const btn = document.getElementById('snippetModalCopy');
+    const prev = btn.textContent;
+    btn.textContent = 'Скопировано!';
+    setTimeout(() => { btn.textContent = prev; }, 1800);
+  });
+});
+
+document.getElementById('snippetModalOpenLink').addEventListener('click', () => {
+  if (!snippetModalUrl) return;
+  window.open(snippetModalUrl, '_blank', 'noopener,noreferrer');
+});
+
+// ═══════════════ DASHBOARD ═══════════════
+function enterDashboard() {
+  currentWidgetId = null;
+  localStorage.removeItem('smm_active_widget_id');
+  document.getElementById('dashSection').style.display = '';
+  document.getElementById('editorSections').style.display = 'none';
+  document.getElementById('dashNav').style.display = '';
+  document.getElementById('editorNav').style.display = 'none';
+  renderWidgetsList();
+}
+
+function renderWidgetsList() {
+  const container = document.getElementById('widgetsList');
+  container.innerHTML = '';
+  if (!widgets.length) {
+    container.innerHTML = `
+      <div class="widgets-empty">
+        <div class="widgets-empty-icon">🧩</div>
+        <div class="widgets-empty-title">Виджетов пока нет</div>
+        <div class="widgets-empty-sub">Создайте первый виджет, чтобы начать принимать заявки на встречи</div>
+        <button class="btn-add-widget" id="addWidgetBtnEmpty" type="button">+ Добавить виджет</button>
+      </div>`;
+    document.getElementById('addWidgetBtnEmpty').onclick = createWidget;
+    return;
+  }
+  widgets.forEach(w => {
+    const card = document.createElement('div');
+    card.className = 'widget-card';
+    const date = new Date(w.createdAt).toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'});
+    const widgetCfg = Object.assign(deepClone(DEFAULT), deepClone(w.config || {}));
+    const shareUrl = buildWidgetUrl(widgetCfg);
+    const iframeCode = buildWidgetIframe(widgetCfg);
+    card.innerHTML = `
+      <div class="wcard-icon">🧩</div>
+      <div class="wcard-info">
+        <div class="wcard-name">${escHtml(w.name || 'Виджет без названия')}</div>
+        <div class="wcard-meta">Создан ${date}</div>
+      </div>
+      <div class="wcard-actions">
+        <button class="wcard-edit">Редактировать</button>
+        <button class="wcard-mini-btn wcard-iframe">iframe код</button>
+        <button class="wcard-mini-btn wcard-link">Ссылка</button>
+        <button class="list-item-del">&times;</button>
+      </div>`;
+    card.querySelector('.wcard-edit').addEventListener('click', () => openWidgetEditor(w.id));
+    card.querySelector('.wcard-iframe').addEventListener('click', () => {
+      openSnippetModal({
+        title: 'Iframe код виджета',
+        subtitle: 'Скопируйте и вставьте код на сайт',
+        value: iframeCode,
+        type: 'code'
+      });
+    });
+    card.querySelector('.wcard-link').addEventListener('click', () => {
+      openSnippetModal({
+        title: 'Ссылка на календарь',
+        subtitle: 'Эту ссылку можно отправлять клиентам напрямую',
+        value: shareUrl,
+        type: 'link'
+      });
+    });
+    card.querySelector('.list-item-del').addEventListener('click', () => {
+      if (!confirm(`Удалить виджет «${w.name}»?`)) return;
+      widgets = widgets.filter(x => x.id !== w.id);
+      saveWidgets();
+      renderWidgetsList();
+    });
+    container.appendChild(card);
+  });
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function createWidget() {
+  const w = {
+    id: 'w_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    name: 'Виджет ' + (widgets.length + 1),
+    createdAt: new Date().toISOString(),
+    config: deepClone(DEFAULT)
+  };
+  widgets.push(w);
+  saveWidgets();
+  openWidgetEditor(w.id);
+}
+
+function openWidgetEditor(id) {
+  const w = widgets.find(x => x.id === id);
+  if (!w) return;
+  currentWidgetId = id;
+  localStorage.setItem('smm_active_widget_id', id);
+  cfg = Object.assign(deepClone(DEFAULT), deepClone(w.config));
+  document.getElementById('dashSection').style.display = 'none';
+  document.getElementById('editorSections').style.display = '';
+  document.getElementById('dashNav').style.display = 'none';
+  document.getElementById('editorNav').style.display = '';
+  // сбросить активный раздел на Настройки виджета
+  Object.values(SEC_MAP).forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('secGeneral').classList.add('active');
+  document.querySelectorAll('#editorNav .sb-item').forEach(i => i.classList.remove('active'));
+  document.querySelector('#editorNav .sb-item[data-section="general"]').classList.add('active');
+  // название виджета
+  document.getElementById('cfgWidgetName').value = w.name || '';
+  // Инициализируем коллапс только когда редактор уже виден
+  initCollapsibleCards();
+  populateForms();
+  renderEmbedCode();
+  checkGenerateReady();
+  // Перепроверяем при изменении названия
+  document.getElementById('cfgWidgetName').oninput = checkGenerateReady;
+}
+
+document.getElementById('resetWidgetBtn').addEventListener('click', () => {
+  if (!confirm('Сбросить все настройки виджета до значений по умолчанию?')) return;
+  const name = document.getElementById('cfgWidgetName').value;
+  cfg = deepClone(DEFAULT);
+  document.getElementById('cfgWidgetName').value = name;
+  populateForms();
+  saveCfg();
+  toast('Настройки сброшены');
+});
+
+document.getElementById('addWidgetBtn').onclick = createWidget;
+document.getElementById('backToDashBtn').addEventListener('click', enterDashboard);
+document.getElementById('navMyWidgets').addEventListener('click', enterDashboard);
+
+// ═══════════════ COLLAPSIBLE CARDS ═══════════════
+function initCollapsibleCards() {
+  let visibleIdx = 0;
+  document.querySelectorAll('#secGeneral .settings-card').forEach(card => {
+    // Пропускаем скрытые и уже инициализированные
+    if (card.style.display === 'none') return;
+    if (card.querySelector('.card-toggle-btn')) return;
+
+    const h3 = card.querySelector(':scope > h3');
+    if (!h3) return;
+
+    // SVG-шеврон — вставляем как первый элемент внутри h3, чтобы push не мешал тексту
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'card-toggle-btn';
+    btn.setAttribute('aria-label', 'Свернуть / развернуть');
+    btn.innerHTML =
+      `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">` +
+      `<path d="M3 5.5L8 10.5L13 5.5" stroke="currentColor" stroke-width="2"` +
+      ` stroke-linecap="round" stroke-linejoin="round"/>` +
+      `</svg>`;
+    h3.appendChild(btn);
+
+    // Оборачиваем содержимое карточки (всё кроме h3) в .card-body
+    const body = document.createElement('div');
+    body.className = 'card-body';
+    const kids = [...card.children].filter(el => el !== h3);
+    kids.forEach(el => body.appendChild(el));
+    card.appendChild(body);
+
+    card.classList.add('collapsible');
+
+    // Первый видимый блок — открыт, остальные — свёрнуты
+    if (visibleIdx > 0) card.classList.add('collapsed');
+    visibleIdx++;
+
+    h3.addEventListener('click', () => card.classList.toggle('collapsed'));
+  });
+}
+
+// ═══════════════ INIT ═══════════════
+initTheme();
+const session = loadSession();
+if (session) {
+  enterApp(session);
+}
+</script>
+</body>
+</html>
