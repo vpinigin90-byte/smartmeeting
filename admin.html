@@ -218,8 +218,25 @@
       right: 10px; top: 50%;
       transform: translateY(-50%);
       background: none; border: none;
-      color: var(--muted); font-size: 15px;
-      cursor: pointer; padding: 2px;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pass-eye svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .btn-full {
@@ -1422,15 +1439,14 @@
     }
 
     .emp-mailru-row {
-      display: grid;
-      grid-template-columns: minmax(280px,420px) auto;
-      align-items: end;
-      justify-content: start;
-      gap: 8px;
+      width: 100%;
     }
 
     .emp-mailru-field { width: 100%; min-width: 0; margin-bottom: 0; }
-    .emp-mailru-row .btn-save { margin: 0; white-space: nowrap; }
+    .emp-mailru-field .pass-wrap { position: relative; display: flex; align-items: center; }
+    .emp-mailru-field .pass-wrap input { flex: 1; padding-right: 42px; }
+    .emp-mailru-field .pass-wrap.saved { cursor: pointer; }
+    .emp-mailru-field .pass-wrap.saved input { cursor: pointer; }
 
     .btn-sched {
       display: inline-flex;
@@ -2323,7 +2339,7 @@
           <label for="loginPass">Пароль</label>
           <div class="pass-wrap">
             <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" />
-            <button type="button" class="pass-eye" data-for="loginPass">👁</button>
+            <button type="button" class="pass-eye" data-for="loginPass"></button>
           </div>
           <div class="f-error" id="loginPassErr"></div>
         </div>
@@ -2348,7 +2364,7 @@
           <label for="regPass">Пароль</label>
           <div class="pass-wrap">
             <input id="regPass" type="password" placeholder="Минимум 8 символов" autocomplete="new-password" />
-            <button type="button" class="pass-eye" data-for="regPass">👁</button>
+            <button type="button" class="pass-eye" data-for="regPass"></button>
           </div>
           <div class="f-error" id="regPassErr"></div>
         </div>
@@ -2356,7 +2372,7 @@
           <label for="regPass2">Повторите пароль</label>
           <div class="pass-wrap">
             <input id="regPass2" type="password" placeholder="••••••••" autocomplete="new-password" />
-            <button type="button" class="pass-eye" data-for="regPass2">👁</button>
+            <button type="button" class="pass-eye" data-for="regPass2"></button>
           </div>
           <div class="f-error" id="regPass2Err"></div>
         </div>
@@ -3730,11 +3746,31 @@ document.querySelectorAll('.auth-tab').forEach(tab => {
 });
 
 // ═══════════════ PASSWORD TOGGLE ═══════════════
+const PASS_EYE_OPEN_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3.5"/></svg>';
+const PASS_EYE_CLOSED_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.58 10.58A3 3 0 0 0 13.42 13.42"/><path d="M9.88 5.08A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a19.1 19.1 0 0 1-3.1 4.1"/><path d="M6.4 6.4C3.8 8.5 2 12 2 12s3.5 7 10 7a11 11 0 0 0 4.05-.74"/></svg>';
+
+function setPassEyeIcon(btn, visible) {
+  if (!btn) return;
+  btn.innerHTML = visible ? PASS_EYE_OPEN_ICON : PASS_EYE_CLOSED_ICON;
+  btn.setAttribute('aria-label', visible ? 'Скрыть пароль' : 'Показать пароль');
+}
+
+function getPassEyeInput(btn) {
+  if (btn.dataset.for) return document.getElementById(btn.dataset.for);
+  if (btn.dataset.mailruPasswordToggle) {
+    return document.querySelector(`[data-mailru-password="${btn.dataset.mailruPasswordToggle}"]`);
+  }
+  return null;
+}
+
 document.querySelectorAll('.pass-eye').forEach(btn => {
+  const inp = getPassEyeInput(btn);
+  if (inp) setPassEyeIcon(btn, inp.type === 'text');
   btn.addEventListener('click', () => {
-    const inp = document.getElementById(btn.dataset.for);
-    inp.type = inp.type === 'password' ? 'text' : 'password';
-    btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+    const input = getPassEyeInput(btn);
+    if (!input || btn.disabled) return;
+    input.type = input.type === 'password' ? 'text' : 'password';
+    setPassEyeIcon(btn, input.type === 'text');
   });
 });
 
@@ -4119,17 +4155,16 @@ function makeVariableParticipantCard(emp, i) {
     <div class="emp-mailru-row">
       <div class="s-field emp-mailru-field">
         <label>Пароль приложения</label>
-        <div class="pass-wrap">
+        <div class="pass-wrap" data-mailru-password-wrap="${emp.id}">
           <input type="password" class="emp-name-input" data-mailru-password="${emp.id}" placeholder="" ${isMailruEnabled ? '' : 'disabled'} />
-          <button type="button" class="pass-eye" data-mailru-password-toggle="${emp.id}" ${isMailruEnabled ? '' : 'disabled'}>👁</button>
+          <button type="button" class="pass-eye" data-mailru-password-toggle="${emp.id}" aria-label="Показать пароль" ${isMailruEnabled ? '' : 'disabled'}></button>
         </div>
       </div>
-      <button type="button" class="btn-save accent" data-mailru-password-save="${emp.id}" disabled>Сохранить</button>
     </div>
     <div class="provider-actions">
+      <button type="button" class="btn-save accent" data-mailru-password-save="${emp.id}" style="display:none" disabled>Сохранить</button>
       <button type="button" class="btn-save" data-edit-personal="${emp.id}">Редактировать данные</button>
       <button type="button" class="btn-save" data-mailru-test="${emp.id}" ${(mailruState.hasPassword && isMailruEnabled) ? '' : 'disabled'}>Проверить доступность календаря</button>
-      <button type="button" class="btn-save accent" data-mailru-save="${emp.id}" ${isMailruEnabled ? '' : 'disabled'}>Сохранить изменения</button>
     </div>
     <div class="intg-status ${mailruState.account && isMailruEnabled ? 'success' : ''}" data-mailru-status="${emp.id}">${!isMailruEnabled ? 'Сначала включите Календарь Mail.ru в разделе «Интеграции».' : (mailruState.account ? `Календарь успешно подключен${defaultCalendar?.name ? `: ${escapeHtml(defaultCalendar.name)}` : ''}.` : 'Календарь ещё не подключён.')}</div>
   `;
@@ -4143,23 +4178,48 @@ function makeVariableParticipantCard(emp, i) {
   const statusEl = mailruSection.querySelector(`[data-mailru-status="${emp.id}"]`);
   const passwordEl = mailruSection.querySelector(`[data-mailru-password="${emp.id}"]`);
   const passwordToggleEl = mailruSection.querySelector(`[data-mailru-password-toggle="${emp.id}"]`);
+  const passwordWrapEl = mailruSection.querySelector(`[data-mailru-password-wrap="${emp.id}"]`);
   const passwordSaveEl = mailruSection.querySelector(`[data-mailru-password-save="${emp.id}"]`);
   const calendarTestEl = mailruSection.querySelector(`[data-mailru-test="${emp.id}"]`);
-  const finalSaveEl = mailruSection.querySelector(`[data-mailru-save="${emp.id}"]`);
   let hasSavedPassword = Boolean(mailruState.hasPassword);
+  let passwordEditable = !hasSavedPassword;
+  const EYE_OPEN_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3.5"/></svg>';
+  const EYE_CLOSED_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.58 10.58A3 3 0 0 0 13.42 13.42"/><path d="M9.88 5.08A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a19.1 19.1 0 0 1-3.1 4.1"/><path d="M6.4 6.4C3.8 8.5 2 12 2 12s3.5 7 10 7a11 11 0 0 0 4.05-.74"/></svg>';
+
+  function setEyeIcon(visible) {
+    passwordToggleEl.innerHTML = visible ? EYE_OPEN_ICON : EYE_CLOSED_ICON;
+    passwordToggleEl.setAttribute('aria-label', visible ? 'Скрыть пароль' : 'Показать пароль');
+  }
 
   function syncMailruButtonState() {
-    passwordSaveEl.disabled = !isMailruEnabled || !passwordEl.value.trim();
+    const isSaved = hasSavedPassword && !passwordEditable;
+    passwordEl.disabled = !isMailruEnabled || !passwordEditable;
+    passwordEl.placeholder = isSaved ? '••••••••••••••••' : '';
+    passwordToggleEl.disabled = !isMailruEnabled || !passwordEditable;
+    passwordSaveEl.style.display = (isMailruEnabled && passwordEditable) ? '' : 'none';
+    passwordSaveEl.disabled = !passwordEl.value.trim();
     calendarTestEl.disabled = !isMailruEnabled || !hasSavedPassword;
-    finalSaveEl.disabled = !isMailruEnabled;
+    passwordWrapEl.classList.toggle('saved', isSaved && isMailruEnabled);
+    passwordWrapEl.title = (isSaved && isMailruEnabled) ? 'Нажмите, чтобы изменить пароль' : '';
+    setEyeIcon(passwordEl.type === 'text');
   }
 
   passwordEl.addEventListener('input', syncMailruButtonState);
 
+  passwordWrapEl.addEventListener('click', (e) => {
+    if (!isMailruEnabled || passwordEditable) return;
+    if (e.target === passwordToggleEl || passwordToggleEl.contains(e.target)) return;
+    passwordEditable = true;
+    passwordEl.value = '';
+    passwordEl.type = 'password';
+    syncMailruButtonState();
+    passwordEl.focus();
+  });
+
   passwordToggleEl.addEventListener('click', () => {
-    if (!isMailruEnabled) return;
+    if (!isMailruEnabled || passwordEl.disabled) return;
     passwordEl.type = passwordEl.type === 'password' ? 'text' : 'password';
-    passwordToggleEl.textContent = passwordEl.type === 'password' ? '👁' : '🙈';
+    setEyeIcon(passwordEl.type === 'text');
   });
 
   function setEmployeeMailruStatus(message, type = '') {
@@ -4187,7 +4247,7 @@ function makeVariableParticipantCard(emp, i) {
     });
     if (savePassword) {
       hasSavedPassword = true;
-      passwordEl.value = '';
+      passwordEditable = false;
     }
     syncMailruButtonState();
     setEmployeeMailruStatus(
@@ -4199,13 +4259,13 @@ function makeVariableParticipantCard(emp, i) {
     if (closeAfterSave) {
       activeVariableParticipantSettingsId = null;
     }
-    renderStaffList();
     return employeeState;
   }
 
   passwordSaveEl.addEventListener('click', async () => {
     try {
       await persistEmployeeMailru(true, false);
+      syncMailruButtonState();
       toast('Пароль приложения сохранён ✓');
     } catch (error) {
       setEmployeeMailruStatus(`Не удалось сохранить пароль: ${error.message}`, 'error');
@@ -4242,16 +4302,6 @@ function makeVariableParticipantCard(emp, i) {
       toast('Календарь успешно подключен ✓');
     } catch (error) {
       setEmployeeMailruStatus(`Проверка не прошла: ${error.message}`, 'error');
-      toast(`Ошибка: ${error.message}`);
-    }
-  });
-
-  finalSaveEl.addEventListener('click', async () => {
-    try {
-      await persistEmployeeMailru(false, true);
-      toast('Настройки сотрудника сохранены ✓');
-    } catch (error) {
-      setEmployeeMailruStatus(`Не удалось сохранить: ${error.message}`, 'error');
       toast(`Ошибка: ${error.message}`);
     }
   });
