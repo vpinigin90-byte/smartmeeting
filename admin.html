@@ -1439,14 +1439,16 @@
     }
 
     .emp-mailru-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
       width: 100%;
     }
 
-    .emp-mailru-field { width: 100%; min-width: 0; margin-bottom: 0; }
+    .emp-mailru-field { flex: 1; min-width: 0; margin-bottom: 0; }
     .emp-mailru-field .pass-wrap { position: relative; display: flex; align-items: center; }
     .emp-mailru-field .pass-wrap input { flex: 1; padding-right: 42px; }
-    .emp-mailru-field .pass-wrap.saved { cursor: pointer; }
-    .emp-mailru-field .pass-wrap.saved input { cursor: pointer; }
+    .emp-mailru-row-actions { display: flex; gap: 6px; flex: 0 0 auto; }
 
     .btn-sched {
       display: inline-flex;
@@ -3695,8 +3697,8 @@ async function saveMailruIntegrationFromForm() {
 }
 
 async function testMailruEmployeeIntegration(employeeId, account, password) {
-  if (!account || !password) {
-    throw new Error('Для проверки нужны email Mail.ru и пароль внешнего приложения');
+  if (!account) {
+    throw new Error('Для проверки нужен email Mail.ru сотрудника');
   }
   const data = await apiRequest('/api/integrations/mailru/employee/test', {
     method: 'POST',
@@ -4160,9 +4162,12 @@ function makeVariableParticipantCard(emp, i) {
           <button type="button" class="pass-eye" data-mailru-password-toggle="${emp.id}" aria-label="Показать пароль" ${isMailruEnabled ? '' : 'disabled'}></button>
         </div>
       </div>
+      <div class="emp-mailru-row-actions">
+        <button type="button" class="btn-save" data-mailru-password-edit="${emp.id}" style="display:none" ${isMailruEnabled ? '' : 'disabled'}>Изменить</button>
+        <button type="button" class="btn-save accent" data-mailru-password-save="${emp.id}" style="display:none" disabled>Сохранить</button>
+      </div>
     </div>
     <div class="provider-actions">
-      <button type="button" class="btn-save accent" data-mailru-password-save="${emp.id}" style="display:none" disabled>Сохранить</button>
       <button type="button" class="btn-save" data-edit-personal="${emp.id}">Редактировать данные</button>
       <button type="button" class="btn-save" data-mailru-test="${emp.id}" ${(mailruState.hasPassword && isMailruEnabled) ? '' : 'disabled'}>Проверить доступность календаря</button>
     </div>
@@ -4180,6 +4185,7 @@ function makeVariableParticipantCard(emp, i) {
   const passwordToggleEl = mailruSection.querySelector(`[data-mailru-password-toggle="${emp.id}"]`);
   const passwordWrapEl = mailruSection.querySelector(`[data-mailru-password-wrap="${emp.id}"]`);
   const passwordSaveEl = mailruSection.querySelector(`[data-mailru-password-save="${emp.id}"]`);
+  const passwordEditEl = mailruSection.querySelector(`[data-mailru-password-edit="${emp.id}"]`);
   const calendarTestEl = mailruSection.querySelector(`[data-mailru-test="${emp.id}"]`);
   let hasSavedPassword = Boolean(mailruState.hasPassword);
   let passwordEditable = !hasSavedPassword;
@@ -4195,20 +4201,17 @@ function makeVariableParticipantCard(emp, i) {
     const isSaved = hasSavedPassword && !passwordEditable;
     passwordEl.disabled = !isMailruEnabled || !passwordEditable;
     passwordEl.placeholder = isSaved ? '••••••••••••••••' : '';
-    passwordToggleEl.disabled = !isMailruEnabled || !passwordEditable;
+    passwordToggleEl.disabled = !isMailruEnabled;
+    passwordEditEl.style.display = (isMailruEnabled && isSaved) ? '' : 'none';
     passwordSaveEl.style.display = (isMailruEnabled && passwordEditable) ? '' : 'none';
     passwordSaveEl.disabled = !passwordEl.value.trim();
     calendarTestEl.disabled = !isMailruEnabled || !hasSavedPassword;
-    passwordWrapEl.classList.toggle('saved', isSaved && isMailruEnabled);
-    passwordWrapEl.title = (isSaved && isMailruEnabled) ? 'Нажмите, чтобы изменить пароль' : '';
     setEyeIcon(passwordEl.type === 'text');
   }
 
   passwordEl.addEventListener('input', syncMailruButtonState);
 
-  passwordWrapEl.addEventListener('click', (e) => {
-    if (!isMailruEnabled || passwordEditable) return;
-    if (e.target === passwordToggleEl || passwordToggleEl.contains(e.target)) return;
+  passwordEditEl.addEventListener('click', () => {
     passwordEditable = true;
     passwordEl.value = '';
     passwordEl.type = 'password';
@@ -4217,7 +4220,7 @@ function makeVariableParticipantCard(emp, i) {
   });
 
   passwordToggleEl.addEventListener('click', () => {
-    if (!isMailruEnabled || passwordEl.disabled) return;
+    if (!isMailruEnabled) return;
     passwordEl.type = passwordEl.type === 'password' ? 'text' : 'password';
     setEyeIcon(passwordEl.type === 'text');
   });
@@ -4283,7 +4286,7 @@ function makeVariableParticipantCard(emp, i) {
         throw new Error('Сначала сохрани пароль приложения');
       }
       setEmployeeMailruStatus('Проверяю доступ к Mail.ru Calendar…');
-      const testData = await testMailruEmployeeIntegration(emp.id, employeeEmail, getMailruEmployeeState(emp.id).hasPassword ? '' : passwordEl.value.trim());
+      const testData = await testMailruEmployeeIntegration(emp.id, employeeEmail, passwordEl.value.trim());
       const firstCalendar = (testData.calendars || [])[0] || null;
       mailruIntegrationState.employees = {
         ...(mailruIntegrationState.employees || {}),
