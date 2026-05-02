@@ -3644,6 +3644,24 @@ function getMailruEmployeeState(employeeId) {
   };
 }
 
+function formatMailruCalendarName(name, calendarUrl = '') {
+  const value = String(name || '').trim();
+  if (!value || value === 'Без названия') {
+    if (calendarUrl) {
+      const cleanHref = String(calendarUrl).split('?')[0].replace(/\/+$/, '');
+      const lastSegment = cleanHref.split('/').filter(Boolean).pop() || '';
+      if (lastSegment) {
+        const decoded = decodeURIComponent(lastSegment).replace(/[-_]+/g, ' ').trim();
+        if (decoded) {
+          return decoded.charAt(0).toUpperCase() + decoded.slice(1);
+        }
+      }
+    }
+    return 'Календарь Mail.ru';
+  }
+  return value;
+}
+
 function hasActiveMailruEmployees() {
   return Object.values(mailruIntegrationState.employees || {}).some(employeeState => (
     Boolean(employeeState.account) &&
@@ -4146,7 +4164,7 @@ function makeVariableParticipantCard(emp, i) {
   const defaultCalendar = mailruState.selectedCalendarUrl
     ? {
         url: mailruState.selectedCalendarUrl,
-        name: mailruState.selectedCalendarName || ''
+        name: formatMailruCalendarName(mailruState.selectedCalendarName, mailruState.selectedCalendarUrl)
       }
     : (mailruState.calendars || [])[0] || null;
   mailruSection.innerHTML = `
@@ -4246,7 +4264,7 @@ function makeVariableParticipantCard(emp, i) {
       account: employeeEmail,
       password: savePassword ? passwordEl.value.trim() : '',
       selectedCalendarUrl: currentCalendar?.url || '',
-      selectedCalendarName: currentCalendar?.name || ''
+      selectedCalendarName: formatMailruCalendarName(currentCalendar?.name, currentCalendar?.url || '')
     });
     if (savePassword) {
       hasSavedPassword = true;
@@ -4297,11 +4315,11 @@ function makeVariableParticipantCard(emp, i) {
           hasPassword: true,
           calendars: testData.calendars || [],
           selectedCalendarUrl: firstCalendar?.url || '',
-          selectedCalendarName: firstCalendar?.name || ''
+          selectedCalendarName: formatMailruCalendarName(firstCalendar?.name, firstCalendar?.url || '')
         }
       };
       await persistEmployeeMailru(false, false);
-      setEmployeeMailruStatus(`Календарь успешно подключен${firstCalendar?.name ? `: ${firstCalendar.name}` : ''}.`, 'success');
+      setEmployeeMailruStatus(`Календарь успешно подключен${firstCalendar?.name ? `: ${formatMailruCalendarName(firstCalendar.name, firstCalendar.url || '')}` : ''}.`, 'success');
       toast('Календарь успешно подключен ✓');
     } catch (error) {
       setEmployeeMailruStatus(`Проверка не прошла: ${error.message}`, 'error');
@@ -5647,7 +5665,7 @@ document.getElementById('generateEmbedBtn').addEventListener('click', () => {
 function renderEmbedCode() {
   const width  = (document.getElementById('embedWidth')?.value  || '100%').trim();
   const height = parseInt(document.getElementById('embedHeight')?.value) || 750;
-  const baseUrl = 'https://smartmeeting.app/widget';
+  const baseUrl = getWidgetPageUrl();
 
   const iframeCode = buildWidgetIframe(cfg, width, height);
   const scriptCode =
@@ -5655,8 +5673,22 @@ function renderEmbedCode() {
 <div id="smartmeeting-root"></div>
 <script>
 window.sMartMeetingConfig = ${JSON.stringify(cfg, null, 2)};
-<\/script>
-<script src="${baseUrl}.js" async defer><\/script>`;
+(function () {
+  var root = document.getElementById('smartmeeting-root');
+  if (!root) return;
+  var iframe = document.createElement('iframe');
+  iframe.src = '${baseUrl}?cfg=' + encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(window.sMartMeetingConfig || {})))));
+  iframe.width = '${width}';
+  iframe.height = '${height}px';
+  iframe.frameBorder = '0';
+  iframe.loading = 'lazy';
+  iframe.allow = 'clipboard-write';
+  iframe.style.border = 'none';
+  iframe.style.borderRadius = '${cfg.borderRadius ?? 20}px';
+  iframe.style.display = 'block';
+  root.appendChild(iframe);
+})();
+<\/script>`;
   const iframeBlock = document.getElementById('iframeCodeBlock');
   const scriptBlock = document.getElementById('scriptCodeBlock');
   if (iframeBlock) iframeBlock.textContent = iframeCode;
@@ -5735,7 +5767,15 @@ function checkGenerateReady() {
 
 function buildWidgetUrl(config) {
   const cfgB64 = btoa(unescape(encodeURIComponent(JSON.stringify(config))));
-  return 'https://smartmeeting.app/widget?cfg=' + cfgB64;
+  return `${getWidgetPageUrl()}?cfg=${cfgB64}`;
+}
+
+function getWidgetPageUrl() {
+  const page = 'prototype-main-flow-space-console.html';
+  if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') {
+    return `${window.location.origin}/${page}`;
+  }
+  return page;
 }
 
 function buildWidgetIframe(config, width = '100%', height = 750) {
