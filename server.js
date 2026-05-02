@@ -350,7 +350,7 @@ async function caldavRequest({ method, url, account, password, headers = {}, bod
   if (!response.ok && response.status !== 207) {
     console.error(`[CalDAV] Error body: ${text.trim().slice(0, 500)}`);
     if (response.status === 401) {
-      const error = new Error('Неверный email или пароль приложения Mail.ru. Проверьте, что пароль приложения создан в настройках Mail.ru для CalDAV.');
+      const error = new Error('Ошибка авторизации Mail.ru. Убедитесь, что используется пароль внешнего приложения (не основной пароль аккаунта), созданный в настройках Mail.ru → Безопасность → «Пароли для внешних приложений» с типом доступа «Полный доступ к Календарю».');
       error.statusCode = 401;
       throw error;
     }
