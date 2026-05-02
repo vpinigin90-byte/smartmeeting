@@ -560,25 +560,8 @@ async function handleApi(req, res, requestUrl) {
       const selectedCalendarName = String(body.selectedCalendarName || '').trim();
       const currentEmployee = currentConfig.employees?.[employeeId] || {};
       const storedPassword = password || decryptSecret(currentEmployee.password || '');
-      let calendars = Array.isArray(currentEmployee.calendars) ? currentEmployee.calendars : [];
-      let validatedAt = currentEmployee.lastValidatedAt || null;
-      const needsValidation =
-        Boolean(password) ||
-        (Boolean(account) && !currentEmployee.password) ||
-        (Boolean(account) && account !== currentEmployee.account);
-
-      if (needsValidation) {
-        if (!account) {
-          return sendError(res, 400, 'Для интеграции Mail.ru нужно указать email аккаунта');
-        }
-        if (!storedPassword) {
-          return sendError(res, 400, 'Для интеграции Mail.ru нужен пароль внешнего приложения');
-        }
-        const discovery = await discoverMailruCalendars({ account, password: storedPassword });
-        calendars = discovery.calendars;
-        validatedAt = new Date().toISOString();
-      }
-
+      const accountChanged = Boolean(account) && account !== currentEmployee.account;
+      const calendars = accountChanged ? [] : (Array.isArray(currentEmployee.calendars) ? currentEmployee.calendars : []);
       const resolvedCalendar = calendars.find(calendar => calendar.url === selectedCalendarUrl);
       const nextEmployee = {
         ...currentEmployee,
@@ -588,7 +571,7 @@ async function handleApi(req, res, requestUrl) {
         selectedCalendarUrl: resolvedCalendar?.url || selectedCalendarUrl || '',
         selectedCalendarName: resolvedCalendar?.name || selectedCalendarName || '',
         updatedAt: new Date().toISOString(),
-        lastValidatedAt: validatedAt
+        lastValidatedAt: currentEmployee.lastValidatedAt || null
       };
 
       const nextConfig = {
