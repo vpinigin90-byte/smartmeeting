@@ -346,7 +346,14 @@ async function caldavRequest({ method, url, account, password, headers = {}, bod
   });
 
   const text = await response.text();
+  console.log(`[CalDAV] ${method} ${url} → ${response.status}`);
   if (!response.ok && response.status !== 207) {
+    console.error(`[CalDAV] Error body: ${text.trim().slice(0, 500)}`);
+    if (response.status === 401) {
+      const error = new Error('Неверный email или пароль приложения Mail.ru. Проверьте, что пароль приложения создан в настройках Mail.ru для CalDAV.');
+      error.statusCode = 401;
+      throw error;
+    }
     const detail = text && text.trim() ? `: ${text.trim().slice(0, 240)}` : '';
     const error = new Error(`Mail.ru CalDAV вернул ${response.status}${detail}`);
     error.statusCode = response.status;
@@ -358,9 +365,11 @@ async function caldavRequest({ method, url, account, password, headers = {}, bod
 
 async function discoverMailruCalendars({ account, password }) {
   const rootUrl = 'https://calendar.mail.ru/';
+  // .well-known/caldav redirects to /principals/ — start discovery there directly
+  const principalDiscoveryUrl = `${rootUrl}principals/`;
   const principalResponse = await caldavRequest({
     method: 'PROPFIND',
-    url: rootUrl,
+    url: principalDiscoveryUrl,
     account,
     password,
     headers: {
@@ -375,11 +384,14 @@ async function discoverMailruCalendars({ account, password }) {
 </d:propfind>`
   });
 
+  let principalUrl;
   const principalPath = getTagValue(principalResponse.text, 'href');
-  if (!principalPath) {
-    throw new Error('Не удалось определить principal URL Mail.ru Calendar');
+  if (principalPath) {
+    principalUrl = toAbsoluteUrl(rootUrl, principalPath);
+  } else {
+    // Fall back to constructing principal URL from account email
+    principalUrl = `${rootUrl}principals/users/${encodeURIComponent(account)}/`;
   }
-  const principalUrl = toAbsoluteUrl(rootUrl, principalPath);
 
   const homeResponse = await caldavRequest({
     method: 'PROPFIND',
@@ -398,11 +410,14 @@ async function discoverMailruCalendars({ account, password }) {
 </d:propfind>`
   });
 
+  let homeUrl;
   const homePath = getTagValue(homeResponse.text, 'href');
-  if (!homePath) {
-    throw new Error('Не удалось определить calendar-home-set Mail.ru Calendar');
+  if (homePath) {
+    homeUrl = toAbsoluteUrl(rootUrl, homePath);
+  } else {
+    // Fall back to constructing calendar home URL from account email
+    homeUrl = `${rootUrl}calendars/${encodeURIComponent(account)}/`;
   }
-  const homeUrl = toAbsoluteUrl(rootUrl, homePath);
 
   const calendarsResponse = await caldavRequest({
     method: 'PROPFIND',
