@@ -1,9 +1,14 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const PORT = Number(process.env.PORT) || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
+const DATA_DIR = path.join(ROOT, 'data');
+const MAILRU_CONFIG_PATH = path.join(DATA_DIR, 'mailru-calendar-integration.json');
+const CONFIG_SECRET = process.env.MAILRU_CONFIG_SECRET || process.env.APP_SECRET || '';
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -22,9 +27,27 @@ const MIME_TYPES = {
   '.md': 'text/markdown; charset=utf-8'
 };
 
+const MAILRU_DEFAULT_CONFIG = {
+  enabled: false,
+  account: '',
+  password: '',
+  calendars: [],
+  employeeBindings: {},
+  updatedAt: null,
+  lastValidatedAt: null
+};
+
 function send(res, statusCode, body, contentType) {
   res.writeHead(statusCode, { 'Content-Type': contentType });
   res.end(body);
+}
+
+function sendJson(res, statusCode, payload) {
+  send(res, statusCode, JSON.stringify(payload), 'application/json; charset=utf-8');
+}
+
+function sendError(res, statusCode, message, details) {
+  sendJson(res, statusCode, { ok: false, error: message, details: details || null });
 }
 
 function resolveRequestPath(urlPath) {
@@ -36,36 +59,630 @@ function resolveRequestPath(urlPath) {
   return path.join(ROOT, normalized);
 }
 
-const server = http.createServer((req, res) => {
-  const requestUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  const filePath = resolveRequestPath(requestUrl.pathname);
+function ensureDataDir() {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
-  if (!filePath.startsWith(ROOT)) {
-    send(res, 403, 'Forbidden', 'text/plain; charset=utf-8');
-    return;
+function secretKey() {
+  return crypto.createHash('sha256').update(CONFIG_SECRET).digest();
+}
+
+function encryptSecret(value) {
+  if (!value) return '';
+  if (!CONFIG_SECRET) return `plain:${Buffer.from(value, 'utf8').toString('base64')}`;
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', secretKey(), iv);
+  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `enc:${iv.toString('hex')}:${tag.toString('hex')}:${encrypted.toString('hex')}`;
+}
+
+function decryptSecret(value) {
+  if (!value) return '';
+  if (value.startsWith('plain:')) {
+    return Buffer.from(value.slice(6), 'base64').toString('utf8');
+  }
+  if (!value.startsWith('enc:')) {
+    return value;
+  }
+  if (!CONFIG_SECRET) {
+    throw new Error('Для расшифровки сохранённого пароля нужен MAILRU_CONFIG_SECRET или APP_SECRET');
+  }
+  const [, ivHex, tagHex, payloadHex] = value.split(':');
+  const decipher = crypto.createDecipheriv(
+    'aes-256-gcm',
+    secretKey(),
+    Buffer.from(ivHex, 'hex')
+  );
+  decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
+  const decrypted = Buffer.concat([
+    decipher.update(Buffer.from(payloadHex, 'hex')),
+    decipher.final()
+  ]);
+  return decrypted.toString('utf8');
+}
+
+function loadMailruConfig() {
+  try {
+    const raw = fs.readFileSync(MAILRU_CONFIG_PATH, 'utf8');
+    const parsed = JSON.parse(raw);
+    return {
+      ...MAILRU_DEFAULT_CONFIG,
+      ...parsed,
+      calendars: Array.isArray(parsed.calendars) ? parsed.calendars : [],
+      employeeBindings: parsed.employeeBindings && typeof parsed.employeeBindings === 'object'
+        ? parsed.employeeBindings
+        : {}
+    };
+  } catch (error) {
+    return { ...MAILRU_DEFAULT_CONFIG };
+  }
+}
+
+function saveMailruConfig(config) {
+  ensureDataDir();
+  fs.writeFileSync(MAILRU_CONFIG_PATH, JSON.stringify(config, null, 2));
+}
+
+function maskAccount(account) {
+  if (!account || !account.includes('@')) return account || '';
+  const [name, domain] = account.split('@');
+  if (name.length <= 2) return `${name[0] || '*'}***@${domain}`;
+  return `${name.slice(0, 2)}***@${domain}`;
+}
+
+function mailruPublicConfig(config) {
+  return {
+    ok: true,
+    enabled: !!config.enabled,
+    account: config.account || '',
+    maskedAccount: maskAccount(config.account || ''),
+    hasPassword: Boolean(config.password),
+    calendars: Array.isArray(config.calendars) ? config.calendars : [],
+    employeeBindings: config.employeeBindings || {},
+    updatedAt: config.updatedAt || null,
+    lastValidatedAt: config.lastValidatedAt || null
+  };
+}
+
+function toAbsoluteUrl(base, href) {
+  return new URL(href, base).toString();
+}
+
+function decodeXml(value) {
+  return String(value || '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .trim();
+}
+
+function getTagValue(xml, tagName) {
+  const pattern = new RegExp(
+    `<(?:[A-Za-z0-9_-]+:)?${tagName}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[A-Za-z0-9_-]+:)?${tagName}>`,
+    'i'
+  );
+  const match = xml.match(pattern);
+  return match ? decodeXml(match[1]) : '';
+}
+
+function getTagValues(xml, tagName) {
+  const pattern = new RegExp(
+    `<(?:[A-Za-z0-9_-]+:)?${tagName}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[A-Za-z0-9_-]+:)?${tagName}>`,
+    'gi'
+  );
+  return [...xml.matchAll(pattern)].map(match => decodeXml(match[1]));
+}
+
+function getResponses(xml) {
+  const pattern = /<(?:[A-Za-z0-9_-]+:)?response(?:\s[^>]*)?>([\s\S]*?)<\/(?:[A-Za-z0-9_-]+:)?response>/gi;
+  return [...xml.matchAll(pattern)].map(match => match[1]);
+}
+
+async function readJsonBody(req) {
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(chunk);
+  }
+  const raw = Buffer.concat(chunks).toString('utf8').trim();
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    throw new Error('Некорректный JSON в теле запроса');
+  }
+}
+
+function toUtcDateTimeString(date) {
+  const iso = new Date(date).toISOString().replace(/[-:]/g, '');
+  return iso.slice(0, 15) + 'Z';
+}
+
+function unfoldIcs(ics) {
+  return String(ics || '').replace(/\r?\n[ \t]/g, '');
+}
+
+function parseIcsLine(line) {
+  const colonIndex = line.indexOf(':');
+  if (colonIndex === -1) return null;
+  const left = line.slice(0, colonIndex);
+  const value = line.slice(colonIndex + 1);
+  const [name, ...paramsRaw] = left.split(';');
+  const params = {};
+  for (const item of paramsRaw) {
+    const eqIndex = item.indexOf('=');
+    if (eqIndex === -1) continue;
+    params[item.slice(0, eqIndex).toUpperCase()] = item.slice(eqIndex + 1);
+  }
+  return {
+    name: name.toUpperCase(),
+    params,
+    value: value.trim()
+  };
+}
+
+function getTimeZoneOffsetMillis(date, timeZone) {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23'
+  });
+  const parts = Object.fromEntries(
+    dtf.formatToParts(date)
+      .filter(part => part.type !== 'literal')
+      .map(part => [part.type, part.value])
+  );
+  const asUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  );
+  return asUtc - date.getTime();
+}
+
+function zonedDateTimeToUtc(parts, timeZone) {
+  let guess = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  for (let i = 0; i < 3; i += 1) {
+    const offset = getTimeZoneOffsetMillis(new Date(guess), timeZone);
+    guess = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second) - offset;
+  }
+  return new Date(guess);
+}
+
+function parseIcsDate(value, params = {}) {
+  if (!value) return null;
+  if (/^\d{8}$/.test(value)) {
+    const year = Number(value.slice(0, 4));
+    const month = Number(value.slice(4, 6));
+    const day = Number(value.slice(6, 8));
+    return new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
   }
 
-  fs.stat(filePath, (statError, stats) => {
-    if (statError) {
-      send(res, 404, 'Not Found', 'text/plain; charset=utf-8');
+  const match = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z)?$/);
+  if (!match) return null;
+  const parts = {
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
+    hour: Number(match[4]),
+    minute: Number(match[5]),
+    second: Number(match[6])
+  };
+
+  if (match[7] === 'Z') {
+    return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
+  }
+  if (params.TZID) {
+    return zonedDateTimeToUtc(parts, params.TZID);
+  }
+  return new Date(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+}
+
+function parseCalendarEvents(ics) {
+  const lines = unfoldIcs(ics).split(/\r?\n/);
+  const events = [];
+  let current = null;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trimEnd();
+    if (line === 'BEGIN:VEVENT') {
+      current = {};
+      continue;
+    }
+    if (line === 'END:VEVENT') {
+      if (current?.dtstart && current?.dtend) {
+        events.push(current);
+      }
+      current = null;
+      continue;
+    }
+    if (!current) continue;
+
+    const parsed = parseIcsLine(line);
+    if (!parsed) continue;
+    if (parsed.name === 'DTSTART') current.dtstart = parseIcsDate(parsed.value, parsed.params);
+    if (parsed.name === 'DTEND') current.dtend = parseIcsDate(parsed.value, parsed.params);
+    if (parsed.name === 'SUMMARY') current.summary = parsed.value;
+    if (parsed.name === 'UID') current.uid = parsed.value;
+    if (parsed.name === 'STATUS') current.status = parsed.value.toUpperCase();
+    if (parsed.name === 'TRANSP') current.transparency = parsed.value.toUpperCase();
+  }
+
+  return events.filter(event => (
+    event.dtstart instanceof Date &&
+    !Number.isNaN(event.dtstart) &&
+    event.dtend instanceof Date &&
+    !Number.isNaN(event.dtend) &&
+    event.status !== 'CANCELLED' &&
+    event.transparency !== 'TRANSPARENT'
+  ));
+}
+
+async function caldavRequest({ method, url, account, password, headers = {}, body = null }) {
+  const auth = Buffer.from(`${account}:${password}`).toString('base64');
+  const response = await fetch(url, {
+    method,
+    headers: {
+      Authorization: `Basic ${auth}`,
+      Accept: 'application/xml, text/xml, */*',
+      ...headers
+    },
+    body
+  });
+
+  const text = await response.text();
+  if (!response.ok && response.status !== 207) {
+    const error = new Error(`Mail.ru CalDAV вернул ${response.status}`);
+    error.statusCode = response.status;
+    error.responseText = text;
+    throw error;
+  }
+  return { status: response.status, text };
+}
+
+async function discoverMailruCalendars({ account, password }) {
+  const rootUrl = 'https://calendar.mail.ru/';
+  const principalResponse = await caldavRequest({
+    method: 'PROPFIND',
+    url: rootUrl,
+    account,
+    password,
+    headers: {
+      Depth: '0',
+      'Content-Type': 'application/xml; charset=utf-8'
+    },
+    body:
+      `<?xml version="1.0" encoding="utf-8" ?>
+       <d:propfind xmlns:d="DAV:">
+         <d:prop>
+           <d:current-user-principal />
+         </d:prop>
+       </d:propfind>`
+  });
+
+  const principalPath = getTagValue(principalResponse.text, 'href');
+  if (!principalPath) {
+    throw new Error('Не удалось определить principal URL Mail.ru Calendar');
+  }
+  const principalUrl = toAbsoluteUrl(rootUrl, principalPath);
+
+  const homeResponse = await caldavRequest({
+    method: 'PROPFIND',
+    url: principalUrl,
+    account,
+    password,
+    headers: {
+      Depth: '0',
+      'Content-Type': 'application/xml; charset=utf-8'
+    },
+    body:
+      `<?xml version="1.0" encoding="utf-8" ?>
+       <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+         <d:prop>
+           <c:calendar-home-set />
+         </d:prop>
+       </d:propfind>`
+  });
+
+  const homePath = getTagValue(homeResponse.text, 'href');
+  if (!homePath) {
+    throw new Error('Не удалось определить calendar-home-set Mail.ru Calendar');
+  }
+  const homeUrl = toAbsoluteUrl(rootUrl, homePath);
+
+  const calendarsResponse = await caldavRequest({
+    method: 'PROPFIND',
+    url: homeUrl,
+    account,
+    password,
+    headers: {
+      Depth: '1',
+      'Content-Type': 'application/xml; charset=utf-8'
+    },
+    body:
+      `<?xml version="1.0" encoding="utf-8" ?>
+       <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+         <d:prop>
+           <d:displayname />
+           <d:resourcetype />
+           <d:current-user-privilege-set />
+         </d:prop>
+       </d:propfind>`
+  });
+
+  const calendars = getResponses(calendarsResponse.text)
+    .filter(responseXml => /<(?:[A-Za-z0-9_-]+:)?calendar(?:\s*\/>|>)/i.test(responseXml))
+    .map(responseXml => {
+      const href = getTagValue(responseXml, 'href');
+      const displayName = getTagValue(responseXml, 'displayname') || 'Без названия';
+      return {
+        url: toAbsoluteUrl(rootUrl, href),
+        name: displayName
+      };
+    })
+    .filter(calendar => calendar.url);
+
+  if (!calendars.length) {
+    throw new Error('У аккаунта Mail.ru не найдено ни одного доступного календаря');
+  }
+
+  return {
+    principalUrl,
+    homeUrl,
+    calendars
+  };
+}
+
+async function queryCalendarBusyEvents({ account, password, calendarUrl, from, to }) {
+  const response = await caldavRequest({
+    method: 'REPORT',
+    url: calendarUrl,
+    account,
+    password,
+    headers: {
+      Depth: '1',
+      'Content-Type': 'application/xml; charset=utf-8'
+    },
+    body:
+      `<?xml version="1.0" encoding="utf-8" ?>
+       <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+         <d:prop>
+           <d:getetag />
+           <c:calendar-data />
+         </d:prop>
+         <c:filter>
+           <c:comp-filter name="VCALENDAR">
+             <c:comp-filter name="VEVENT">
+               <c:time-range start="${toUtcDateTimeString(from)}" end="${toUtcDateTimeString(to)}" />
+             </c:comp-filter>
+           </c:comp-filter>
+         </c:filter>
+       </c:calendar-query>`
+  });
+
+  const events = [];
+  for (const responseXml of getResponses(response.text)) {
+    const calendarDataEntries = getTagValues(responseXml, 'calendar-data');
+    for (const calendarData of calendarDataEntries) {
+      events.push(...parseCalendarEvents(calendarData));
+    }
+  }
+
+  const fromTs = new Date(from).getTime();
+  const toTs = new Date(to).getTime();
+
+  return events
+    .filter(event => event.dtend.getTime() > fromTs && event.dtstart.getTime() < toTs)
+    .sort((left, right) => left.dtstart - right.dtstart)
+    .map(event => ({
+      uid: event.uid || '',
+      summary: event.summary || 'Busy',
+      start: event.dtstart.toISOString(),
+      end: event.dtend.toISOString()
+    }));
+}
+
+async function handleApi(req, res, requestUrl) {
+  if (req.method === 'GET' && requestUrl.pathname === '/api/integrations/mailru') {
+    return sendJson(res, 200, mailruPublicConfig(loadMailruConfig()));
+  }
+
+  if (req.method === 'POST' && requestUrl.pathname === '/api/integrations/mailru/test') {
+    try {
+      const body = await readJsonBody(req);
+      const account = String(body.account || '').trim();
+      const password = String(body.password || '').trim();
+      if (!account || !password) {
+        return sendError(res, 400, 'Укажите email Mail.ru и пароль внешнего приложения');
+      }
+
+      const result = await discoverMailruCalendars({ account, password });
+      return sendJson(res, 200, {
+        ok: true,
+        account,
+        calendars: result.calendars,
+        principalUrl: result.principalUrl,
+        homeUrl: result.homeUrl
+      });
+    } catch (error) {
+      return sendError(res, error.statusCode || 500, error.message);
+    }
+  }
+
+  if (req.method === 'POST' && requestUrl.pathname === '/api/integrations/mailru') {
+    try {
+      const body = await readJsonBody(req);
+      const currentConfig = loadMailruConfig();
+      const account = String(body.account || '').trim();
+      const password = String(body.password || '').trim();
+      const enabled = Boolean(body.enabled);
+      const employeeBindings = body.employeeBindings && typeof body.employeeBindings === 'object'
+        ? body.employeeBindings
+        : {};
+
+      const storedPassword = password || decryptSecret(currentConfig.password || '');
+      let calendars = currentConfig.calendars || [];
+      let validatedAt = currentConfig.lastValidatedAt || null;
+      const needsValidation =
+        enabled ||
+        Boolean(password) ||
+        (Boolean(account) && !currentConfig.password) ||
+        (Boolean(account) && account !== currentConfig.account);
+
+      if (needsValidation) {
+        if (!account) {
+          return sendError(res, 400, 'Для интеграции Mail.ru нужно указать email аккаунта');
+        }
+        if (!storedPassword) {
+          return sendError(res, 400, 'Для интеграции Mail.ru нужен пароль внешнего приложения');
+        }
+        const discovery = await discoverMailruCalendars({ account, password: storedPassword });
+        calendars = discovery.calendars;
+        validatedAt = new Date().toISOString();
+      }
+
+      const nextConfig = {
+        enabled,
+        account,
+        password: storedPassword ? encryptSecret(storedPassword) : '',
+        calendars,
+        employeeBindings,
+        updatedAt: new Date().toISOString(),
+        lastValidatedAt: validatedAt
+      };
+
+      saveMailruConfig(nextConfig);
+      return sendJson(res, 200, mailruPublicConfig(nextConfig));
+    } catch (error) {
+      return sendError(res, error.statusCode || 500, error.message);
+    }
+  }
+
+  if (req.method === 'POST' && requestUrl.pathname === '/api/integrations/mailru/refresh') {
+    try {
+      const currentConfig = loadMailruConfig();
+      const account = String(currentConfig.account || '').trim();
+      const password = decryptSecret(currentConfig.password || '');
+      if (!account || !password) {
+        return sendError(res, 400, 'Сначала сохраните аккаунт Mail.ru и пароль внешнего приложения');
+      }
+      const discovery = await discoverMailruCalendars({ account, password });
+      const nextConfig = {
+        ...currentConfig,
+        calendars: discovery.calendars,
+        updatedAt: new Date().toISOString(),
+        lastValidatedAt: new Date().toISOString()
+      };
+      saveMailruConfig(nextConfig);
+      return sendJson(res, 200, mailruPublicConfig(nextConfig));
+    } catch (error) {
+      return sendError(res, error.statusCode || 500, error.message);
+    }
+  }
+
+  if (req.method === 'POST' && requestUrl.pathname === '/api/integrations/mailru/availability') {
+    try {
+      const body = await readJsonBody(req);
+      const currentConfig = loadMailruConfig();
+      const account = String(currentConfig.account || '').trim();
+      const password = decryptSecret(currentConfig.password || '');
+      if (!account || !password) {
+        return sendError(res, 400, 'Интеграция Mail.ru ещё не настроена');
+      }
+
+      const employeeId = String(body.employeeId || '').trim();
+      const from = body.from ? new Date(body.from) : null;
+      const to = body.to ? new Date(body.to) : null;
+      if (!employeeId) {
+        return sendError(res, 400, 'Не передан сотрудник для проверки занятости');
+      }
+      if (!(from instanceof Date) || Number.isNaN(from) || !(to instanceof Date) || Number.isNaN(to) || to <= from) {
+        return sendError(res, 400, 'Укажите корректный диапазон дат');
+      }
+
+      const binding = currentConfig.employeeBindings?.[employeeId];
+      const calendarUrl = typeof body.calendarUrl === 'string' && body.calendarUrl.trim()
+        ? body.calendarUrl.trim()
+        : binding?.calendarUrl;
+      const calendarName = binding?.calendarName || '';
+      if (!calendarUrl) {
+        return sendError(res, 400, 'Для сотрудника не выбран календарь Mail.ru');
+      }
+
+      const busySlots = await queryCalendarBusyEvents({
+        account,
+        password,
+        calendarUrl,
+        from,
+        to
+      });
+
+      return sendJson(res, 200, {
+        ok: true,
+        employeeId,
+        calendarUrl,
+        calendarName,
+        from: from.toISOString(),
+        to: to.toISOString(),
+        busySlots,
+        isBusy: busySlots.length > 0
+      });
+    } catch (error) {
+      return sendError(res, error.statusCode || 500, error.message);
+    }
+  }
+
+  return sendError(res, 404, 'API endpoint not found');
+}
+
+const server = http.createServer(async (req, res) => {
+  try {
+    const requestUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+
+    if (requestUrl.pathname.startsWith('/api/')) {
+      return await handleApi(req, res, requestUrl);
+    }
+
+    const filePath = resolveRequestPath(requestUrl.pathname);
+    if (!filePath.startsWith(ROOT)) {
+      send(res, 403, 'Forbidden', 'text/plain; charset=utf-8');
       return;
     }
 
-    const finalPath = stats.isDirectory() ? path.join(filePath, 'admin.html') : filePath;
-
-    fs.readFile(finalPath, (readError, data) => {
-      if (readError) {
+    fs.stat(filePath, (statError, stats) => {
+      if (statError) {
         send(res, 404, 'Not Found', 'text/plain; charset=utf-8');
         return;
       }
 
-      const ext = path.extname(finalPath).toLowerCase();
-      const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-      send(res, 200, data, contentType);
+      const finalPath = stats.isDirectory() ? path.join(filePath, 'admin.html') : filePath;
+
+      fs.readFile(finalPath, (readError, data) => {
+        if (readError) {
+          send(res, 404, 'Not Found', 'text/plain; charset=utf-8');
+          return;
+        }
+
+        const ext = path.extname(finalPath).toLowerCase();
+        const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+        send(res, 200, data, contentType);
+      });
     });
-  });
+  } catch (error) {
+    sendError(res, 500, error.message || 'Internal Server Error');
+  }
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`smartmeeting server listening on port ${PORT}`);
+server.listen(PORT, HOST, () => {
+  console.log(`smartmeeting server listening on ${HOST}:${PORT}`);
 });

@@ -875,6 +875,102 @@
     }
     .calendar-provider-card .s-field { margin-bottom: 10px; }
     .calendar-provider-card .s-field:last-child { margin-bottom: 0; }
+    .provider-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .intg-status {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: rgba(23,188,168,0.04);
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+    .intg-status.success {
+      border-color: rgba(23,212,190,0.35);
+      color: #93efe2;
+    }
+    .intg-status.error {
+      border-color: rgba(255,95,126,0.35);
+      color: #ff9bb0;
+    }
+    .calendar-list,
+    .binding-list,
+    .availability-result {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .calendar-list-item,
+    .binding-item,
+    .availability-result-item {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-elev);
+      padding: 10px 12px;
+    }
+    .calendar-list-item strong,
+    .binding-item strong,
+    .availability-result-item strong {
+      display: block;
+      color: var(--text-strong);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .binding-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+      gap: 12px;
+      align-items: center;
+    }
+    .binding-item select,
+    .availability-grid input,
+    .availability-grid select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-elev);
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+    }
+    .binding-item select:focus,
+    .availability-grid input:focus,
+    .availability-grid select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(23,188,168,0.15);
+    }
+    .binding-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .availability-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .availability-grid .s-field {
+      margin-bottom: 0;
+    }
+    .availability-summary {
+      border: 1px dashed rgba(80,175,185,0.24);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: rgba(23,188,168,0.03);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+      margin-top: 12px;
+    }
 
     /* ===== MODAL ===== */
     .modal-overlay {
@@ -1008,6 +1104,8 @@
       .widget-card { flex-direction: column; align-items: stretch; gap: 10px; }
       .wcard-actions { flex-wrap: wrap; }
       .calendar-intg-grid { grid-template-columns: 1fr; }
+      .binding-item,
+      .availability-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -1492,6 +1590,15 @@
               <label>Пароль приложения / токен</label>
               <input type="password" id="calMailruToken" placeholder="Введите ключ доступа" />
             </div>
+            <div class="intg-hint">Mail.ru работает по CalDAV. Используйте сервер <strong>calendar.mail.ru</strong> и специальный пароль для внешнего приложения.</div>
+            <div class="provider-actions">
+              <button class="btn-save" type="button" id="mailruTestBtn">Проверить подключение</button>
+              <button class="btn-save" type="button" id="mailruRefreshBtn">Обновить календари</button>
+            </div>
+            <div class="intg-status" id="mailruStatus">Подключение ещё не проверялось.</div>
+            <div class="calendar-list" id="mailruCalendarList">
+              <div class="staff-empty">После проверки здесь появится список календарей Mail.ru</div>
+            </div>
           </div>
 
           <div class="calendar-provider-card">
@@ -1532,6 +1639,36 @@
             </div>
           </div>
         </div>
+        <div class="intg-divider"></div>
+        <h3>Привязка календарей Mail.ru к сотрудникам</h3>
+        <div class="intg-hint">После успешного подключения выберите календарь для каждого сотрудника, чтобы позже проверять занятость и исключать занятые слоты.</div>
+        <div class="binding-list" id="mailruBindingList">
+          <div class="staff-empty">Сначала подключите Mail.ru и загрузите список календарей</div>
+        </div>
+        <div class="intg-divider"></div>
+        <h3>Проверка занятости</h3>
+        <div class="intg-hint">Тестовый запрос к Mail.ru Calendar по выбранному сотруднику и диапазону времени.</div>
+        <div class="availability-grid">
+          <div class="s-field">
+            <label>Сотрудник</label>
+            <select id="mailruAvailabilityEmployee">
+              <option value="">— Выберите сотрудника —</option>
+            </select>
+          </div>
+          <div class="s-field">
+            <label>Начало периода</label>
+            <input type="datetime-local" id="mailruAvailabilityFrom" />
+          </div>
+          <div class="s-field">
+            <label>Конец периода</label>
+            <input type="datetime-local" id="mailruAvailabilityTo" />
+          </div>
+        </div>
+        <div class="provider-actions">
+          <button class="btn-save" type="button" id="mailruAvailabilityBtn">Проверить занятость</button>
+        </div>
+        <div class="availability-summary" id="mailruAvailabilitySummary">После проверки здесь появится результат по занятости выбранного сотрудника.</div>
+        <div class="availability-result" id="mailruAvailabilityResult"></div>
         <div class="save-bar" style="margin-top:14px">
           <button class="btn-save accent" data-save="calendar">Сохранить</button>
         </div>
@@ -1730,8 +1867,25 @@ let widgets = [];
 let currentWidgetId = null;
 let snippetModalUrl = '';
 const THEME_STORAGE_KEY = 'smm_theme';
+let mailruIntegrationState = {
+  enabled: false,
+  account: '',
+  hasPassword: false,
+  calendars: [],
+  employeeBindings: {},
+  updatedAt: null,
+  lastValidatedAt: null
+};
 
 function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 // ═══════════════ STORAGE ═══════════════
 function getUsers() { return JSON.parse(localStorage.getItem('smm_users') || '[]'); }
@@ -1779,6 +1933,230 @@ function toast(msg) {
   el.classList.add('show');
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+function setMailruStatus(message, type = '') {
+  const el = document.getElementById('mailruStatus');
+  if (!el) return;
+  el.className = `intg-status${type ? ` ${type}` : ''}`;
+  el.textContent = message;
+}
+
+async function apiRequest(url, options = {}) {
+  const response = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    },
+    ...options
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload.ok === false) {
+    throw new Error(payload.error || `HTTP ${response.status}`);
+  }
+  return payload;
+}
+
+function getMailruBindingsFromUi() {
+  const entries = {};
+  document.querySelectorAll('[data-mailru-binding]').forEach(select => {
+    const employeeId = select.dataset.mailruBinding;
+    const calendarUrl = select.value;
+    if (!employeeId || !calendarUrl) return;
+    const option = select.selectedOptions[0];
+    entries[employeeId] = {
+      calendarUrl,
+      calendarName: option?.dataset.calendarName || option?.textContent || ''
+    };
+  });
+  return entries;
+}
+
+function renderMailruCalendars() {
+  const list = document.getElementById('mailruCalendarList');
+  if (!list) return;
+  const calendars = mailruIntegrationState.calendars || [];
+  if (!calendars.length) {
+    list.innerHTML = '<div class="staff-empty">Календари ещё не загружены</div>';
+    return;
+  }
+  list.innerHTML = calendars.map(calendar => `
+    <div class="calendar-list-item">
+      <strong>${escapeHtml(calendar.name)}</strong>
+      <div class="binding-meta">${escapeHtml(calendar.url)}</div>
+    </div>
+  `).join('');
+}
+
+function renderMailruBindingList() {
+  const container = document.getElementById('mailruBindingList');
+  const employeeSelect = document.getElementById('mailruAvailabilityEmployee');
+  if (!container || !employeeSelect) return;
+
+  const calendars = mailruIntegrationState.calendars || [];
+  const bindings = mailruIntegrationState.employeeBindings || {};
+  const staff = Array.isArray(cfg.staff) ? cfg.staff : [];
+
+  employeeSelect.innerHTML = '<option value="">— Выберите сотрудника —</option>';
+  staff.forEach(employee => {
+    const option = document.createElement('option');
+    option.value = employee.id;
+    option.textContent = employee.name || employee.email || employee.id;
+    employeeSelect.appendChild(option);
+  });
+
+  if (!staff.length) {
+    container.innerHTML = '<div class="staff-empty">Сначала добавьте сотрудников в разделе «Команда»</div>';
+    return;
+  }
+  if (!calendars.length) {
+    container.innerHTML = '<div class="staff-empty">Сначала подключите Mail.ru и загрузите список календарей</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  staff.forEach(employee => {
+    const row = document.createElement('div');
+    row.className = 'binding-item';
+    const currentBinding = bindings[employee.id]?.calendarUrl || '';
+    row.innerHTML = `
+      <div>
+        <strong>${escapeHtml(employee.name || 'Без имени')}</strong>
+        <div class="binding-meta">${escapeHtml(employee.email || 'Email не указан')}</div>
+      </div>
+      <div>
+        <select data-mailru-binding="${employee.id}">
+          <option value="">— Календарь не выбран —</option>
+          ${calendars.map(calendar => `
+            <option
+              value="${escapeHtml(calendar.url)}"
+              data-calendar-name="${escapeHtml(calendar.name)}"
+              ${calendar.url === currentBinding ? 'selected' : ''}
+            >${escapeHtml(calendar.name)}</option>
+          `).join('')}
+        </select>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+
+  const fromInput = document.getElementById('mailruAvailabilityFrom');
+  const toInput = document.getElementById('mailruAvailabilityTo');
+  if (fromInput && toInput && !fromInput.value && !toInput.value) {
+    const now = new Date();
+    const end = new Date(now.getTime() + 60 * 60 * 1000);
+    fromInput.value = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    toInput.value = new Date(end.getTime() - end.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  }
+}
+
+function populateMailruIntegration() {
+  document.getElementById('calMailruEnabled').checked = !!mailruIntegrationState.enabled;
+  document.getElementById('calMailruAccount').value = mailruIntegrationState.account || '';
+  document.getElementById('calMailruToken').value = '';
+
+  const validatedAt = mailruIntegrationState.lastValidatedAt
+    ? new Date(mailruIntegrationState.lastValidatedAt).toLocaleString('ru-RU')
+    : '';
+
+  if (mailruIntegrationState.account) {
+    const suffix = validatedAt ? ` Последняя успешная проверка: ${validatedAt}.` : '';
+    const passwordInfo = mailruIntegrationState.hasPassword
+      ? 'Пароль приложения сохранён на сервере.'
+      : 'Пароль приложения ещё не сохранён.';
+    setMailruStatus(`Подключён аккаунт ${mailruIntegrationState.maskedAccount || mailruIntegrationState.account}. ${passwordInfo}${suffix}`, 'success');
+  } else {
+    setMailruStatus('Подключение ещё не настроено.', '');
+  }
+
+  renderMailruCalendars();
+  renderMailruBindingList();
+}
+
+async function loadMailruIntegration() {
+  try {
+    const data = await apiRequest('/api/integrations/mailru', { method: 'GET' });
+    mailruIntegrationState = {
+      enabled: !!data.enabled,
+      account: data.account || '',
+      maskedAccount: data.maskedAccount || '',
+      hasPassword: !!data.hasPassword,
+      calendars: Array.isArray(data.calendars) ? data.calendars : [],
+      employeeBindings: data.employeeBindings || {},
+      updatedAt: data.updatedAt || null,
+      lastValidatedAt: data.lastValidatedAt || null
+    };
+    populateMailruIntegration();
+  } catch (error) {
+    setMailruStatus(`Не удалось загрузить настройки Mail.ru: ${error.message}`, 'error');
+  }
+}
+
+async function saveMailruIntegrationFromForm() {
+  const payload = {
+    enabled: document.getElementById('calMailruEnabled').checked,
+    account: document.getElementById('calMailruAccount').value.trim(),
+    password: document.getElementById('calMailruToken').value.trim(),
+    employeeBindings: getMailruBindingsFromUi()
+  };
+  const data = await apiRequest('/api/integrations/mailru', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+  mailruIntegrationState = {
+    enabled: !!data.enabled,
+    account: data.account || '',
+    maskedAccount: data.maskedAccount || '',
+    hasPassword: !!data.hasPassword,
+    calendars: Array.isArray(data.calendars) ? data.calendars : [],
+    employeeBindings: data.employeeBindings || {},
+    updatedAt: data.updatedAt || null,
+    lastValidatedAt: data.lastValidatedAt || null
+  };
+  populateMailruIntegration();
+  return data;
+}
+
+async function testMailruIntegration() {
+  const account = document.getElementById('calMailruAccount').value.trim();
+  const password = document.getElementById('calMailruToken').value.trim();
+  if (!account || !password) {
+    throw new Error('Для проверки нужны email Mail.ru и пароль внешнего приложения');
+  }
+  setMailruStatus('Проверяю доступ к Mail.ru Calendar…');
+  const data = await apiRequest('/api/integrations/mailru/test', {
+    method: 'POST',
+    body: JSON.stringify({ account, password })
+  });
+  setMailruStatus(`Подключение успешно. Найдено календарей: ${data.calendars.length}.`, 'success');
+  mailruIntegrationState = {
+    ...mailruIntegrationState,
+    account,
+    maskedAccount: account,
+    calendars: data.calendars || []
+  };
+  renderMailruCalendars();
+  renderMailruBindingList();
+  return data;
+}
+
+async function refreshMailruCalendars() {
+  setMailruStatus('Обновляю список календарей Mail.ru…');
+  const data = await apiRequest('/api/integrations/mailru/refresh', {
+    method: 'POST',
+    body: JSON.stringify({})
+  });
+  mailruIntegrationState = {
+    enabled: !!data.enabled,
+    account: data.account || '',
+    maskedAccount: data.maskedAccount || '',
+    hasPassword: !!data.hasPassword,
+    calendars: Array.isArray(data.calendars) ? data.calendars : [],
+    employeeBindings: data.employeeBindings || {},
+    updatedAt: data.updatedAt || null,
+    lastValidatedAt: data.lastValidatedAt || null
+  };
+  populateMailruIntegration();
 }
 
 // ═══════════════ AUTH TABS ═══════════════
@@ -1903,17 +2281,97 @@ document.querySelectorAll('#editorNav .sb-item[data-section]').forEach(item => {
 
 // ═══════════════ SAVE BUTTONS ═══════════════
 document.querySelectorAll('[data-save]').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     const sec = btn.dataset.save;
-    if (sec === 'all') {
-      ['general','schedule','contacts','routing','questions','holidays','appearance','notifications','mts','telegram','calendar'].forEach(s => collectSection(s));
-    } else {
-      collectSection(sec);
+    try {
+      if (sec === 'all') {
+        ['general','schedule','contacts','routing','questions','holidays','appearance','notifications','mts','telegram','calendar'].forEach(s => collectSection(s));
+      } else {
+        collectSection(sec);
+      }
+      if (sec === 'calendar' || sec === 'all') {
+        await saveMailruIntegrationFromForm();
+      }
+      saveCfg();
+      renderEmbedCode();
+      toast('Настройки сохранены ✓');
+    } catch (error) {
+      toast(`Ошибка: ${error.message}`);
+      setMailruStatus(`Не удалось сохранить интеграцию Mail.ru: ${error.message}`, 'error');
     }
-    saveCfg();
-    renderEmbedCode();
-    toast('Настройки сохранены ✓');
   });
+});
+
+document.getElementById('mailruTestBtn').addEventListener('click', async () => {
+  try {
+    await testMailruIntegration();
+    toast('Подключение к Mail.ru подтверждено ✓');
+  } catch (error) {
+    setMailruStatus(`Проверка не прошла: ${error.message}`, 'error');
+    toast(`Ошибка: ${error.message}`);
+  }
+});
+
+document.getElementById('mailruRefreshBtn').addEventListener('click', async () => {
+  try {
+    await refreshMailruCalendars();
+    toast('Список календарей обновлён ✓');
+  } catch (error) {
+    setMailruStatus(`Не удалось обновить календари: ${error.message}`, 'error');
+    toast(`Ошибка: ${error.message}`);
+  }
+});
+
+document.getElementById('mailruAvailabilityBtn').addEventListener('click', async () => {
+  const employeeId = document.getElementById('mailruAvailabilityEmployee').value;
+  const from = document.getElementById('mailruAvailabilityFrom').value;
+  const to = document.getElementById('mailruAvailabilityTo').value;
+  const summary = document.getElementById('mailruAvailabilitySummary');
+  const result = document.getElementById('mailruAvailabilityResult');
+
+  if (!employeeId) {
+    toast('Выберите сотрудника');
+    return;
+  }
+  if (!from || !to) {
+    toast('Укажите период проверки');
+    return;
+  }
+
+  summary.textContent = 'Проверяю занятость сотрудника в Mail.ru Calendar…';
+  result.innerHTML = '';
+
+  try {
+    const selectedCalendar = document.querySelector(`[data-mailru-binding="${employeeId}"]`);
+    const data = await apiRequest('/api/integrations/mailru/availability', {
+      method: 'POST',
+      body: JSON.stringify({
+        employeeId,
+        from: new Date(from).toISOString(),
+        to: new Date(to).toISOString(),
+        calendarUrl: selectedCalendar?.value || ''
+      })
+    });
+
+    if (!data.busySlots.length) {
+      summary.textContent = 'Сотрудник свободен в выбранном диапазоне.';
+      result.innerHTML = '<div class="availability-result-item"><strong>Свободно</strong><div class="binding-meta">Пересечений с событиями Mail.ru не найдено.</div></div>';
+      toast('Сотрудник свободен ✓');
+      return;
+    }
+
+    summary.textContent = `Найдено ${data.busySlots.length} занятых интервалов.`;
+    result.innerHTML = data.busySlots.map(slot => `
+      <div class="availability-result-item">
+        <strong>${escapeHtml(slot.summary || 'Busy')}</strong>
+        <div class="binding-meta">${new Date(slot.start).toLocaleString('ru-RU')} — ${new Date(slot.end).toLocaleString('ru-RU')}</div>
+      </div>
+    `).join('');
+    toast('Занятость загружена ✓');
+  } catch (error) {
+    summary.textContent = `Ошибка проверки: ${error.message}`;
+    toast(`Ошибка: ${error.message}`);
+  }
 });
 
 // ═══════════════ POPULATE FORMS ═══════════════
@@ -1966,7 +2424,7 @@ function populateForms() {
   document.getElementById('calYandexToken').value     = providers.yandex?.token || '';
   document.getElementById('calMailruEnabled').checked = !!providers.mailru?.enabled;
   document.getElementById('calMailruAccount').value   = providers.mailru?.account || '';
-  document.getElementById('calMailruToken').value     = providers.mailru?.token || '';
+  document.getElementById('calMailruToken').value     = '';
   document.getElementById('calOutlookEnabled').checked = !!providers.outlook?.enabled;
   document.getElementById('calOutlookAccount').value   = providers.outlook?.account || '';
   document.getElementById('calOutlookToken').value     = providers.outlook?.token || '';
@@ -1974,6 +2432,7 @@ function populateForms() {
   document.getElementById('calGoogleAccount').value   = providers.google?.account || '';
   document.getElementById('calGoogleToken').value     = providers.google?.token || '';
   renderStaffList();
+  renderMailruBindingList();
 }
 
 // ═══════════════ STAFF ═══════════════
@@ -1982,9 +2441,11 @@ function renderStaffList() {
   container.innerHTML = '';
   if (!cfg.staff.length) {
     container.innerHTML = '<div class="staff-empty">Нет сотрудников — добавьте первого</div>';
+    renderMailruBindingList();
     return;
   }
   cfg.staff.forEach((emp, i) => container.appendChild(makeEmpCard(emp, i)));
+  renderMailruBindingList();
 }
 
 function makeEmpCard(emp, i) {
@@ -2890,7 +3351,7 @@ function collectSection(sec) {
     cfg.calendarSync.providers.mailru = {
       enabled: document.getElementById('calMailruEnabled').checked,
       account: document.getElementById('calMailruAccount').value.trim(),
-      token:   document.getElementById('calMailruToken').value.trim()
+      token:   ''
     };
     cfg.calendarSync.providers.outlook = {
       enabled: document.getElementById('calOutlookEnabled').checked,
@@ -3197,6 +3658,7 @@ function openWidgetEditor(id) {
   // Инициализируем коллапс только когда редактор уже виден
   initCollapsibleCards();
   populateForms();
+  loadMailruIntegration();
   renderEmbedCode();
   checkGenerateReady();
   // Перепроверяем при изменении названия
