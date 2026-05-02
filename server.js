@@ -347,7 +347,8 @@ async function caldavRequest({ method, url, account, password, headers = {}, bod
 
   const text = await response.text();
   if (!response.ok && response.status !== 207) {
-    const error = new Error(`Mail.ru CalDAV вернул ${response.status}`);
+    const detail = text && text.trim() ? `: ${text.trim().slice(0, 240)}` : '';
+    const error = new Error(`Mail.ru CalDAV вернул ${response.status}${detail}`);
     error.statusCode = response.status;
     error.responseText = text;
     throw error;
@@ -366,13 +367,12 @@ async function discoverMailruCalendars({ account, password }) {
       Depth: '0',
       'Content-Type': 'application/xml; charset=utf-8'
     },
-    body:
-      `<?xml version="1.0" encoding="utf-8" ?>
-       <d:propfind xmlns:d="DAV:">
-         <d:prop>
-           <d:current-user-principal />
-         </d:prop>
-       </d:propfind>`
+    body: `<?xml version="1.0" encoding="utf-8"?>
+<d:propfind xmlns:d="DAV:">
+  <d:prop>
+    <d:current-user-principal />
+  </d:prop>
+</d:propfind>`
   });
 
   const principalPath = getTagValue(principalResponse.text, 'href');
@@ -390,13 +390,12 @@ async function discoverMailruCalendars({ account, password }) {
       Depth: '0',
       'Content-Type': 'application/xml; charset=utf-8'
     },
-    body:
-      `<?xml version="1.0" encoding="utf-8" ?>
-       <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
-         <d:prop>
-           <c:calendar-home-set />
-         </d:prop>
-       </d:propfind>`
+    body: `<?xml version="1.0" encoding="utf-8"?>
+<d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+  <d:prop>
+    <c:calendar-home-set />
+  </d:prop>
+</d:propfind>`
   });
 
   const homePath = getTagValue(homeResponse.text, 'href');
@@ -414,15 +413,14 @@ async function discoverMailruCalendars({ account, password }) {
       Depth: '1',
       'Content-Type': 'application/xml; charset=utf-8'
     },
-    body:
-      `<?xml version="1.0" encoding="utf-8" ?>
-       <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
-         <d:prop>
-           <d:displayname />
-           <d:resourcetype />
-           <d:current-user-privilege-set />
-         </d:prop>
-       </d:propfind>`
+    body: `<?xml version="1.0" encoding="utf-8"?>
+<d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+  <d:prop>
+    <d:displayname />
+    <d:resourcetype />
+    <d:current-user-privilege-set />
+  </d:prop>
+</d:propfind>`
   });
 
   const calendars = getResponses(calendarsResponse.text)
@@ -458,21 +456,20 @@ async function queryCalendarBusyEvents({ account, password, calendarUrl, from, t
       Depth: '1',
       'Content-Type': 'application/xml; charset=utf-8'
     },
-    body:
-      `<?xml version="1.0" encoding="utf-8" ?>
-       <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
-         <d:prop>
-           <d:getetag />
-           <c:calendar-data />
-         </d:prop>
-         <c:filter>
-           <c:comp-filter name="VCALENDAR">
-             <c:comp-filter name="VEVENT">
-               <c:time-range start="${toUtcDateTimeString(from)}" end="${toUtcDateTimeString(to)}" />
-             </c:comp-filter>
-           </c:comp-filter>
-         </c:filter>
-       </c:calendar-query>`
+    body: `<?xml version="1.0" encoding="utf-8"?>
+<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+  <d:prop>
+    <d:getetag />
+    <c:calendar-data />
+  </d:prop>
+  <c:filter>
+    <c:comp-filter name="VCALENDAR">
+      <c:comp-filter name="VEVENT">
+        <c:time-range start="${toUtcDateTimeString(from)}" end="${toUtcDateTimeString(to)}" />
+      </c:comp-filter>
+    </c:comp-filter>
+  </c:filter>
+</c:calendar-query>`
   });
 
   const events = [];
