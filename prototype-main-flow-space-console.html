@@ -1070,6 +1070,12 @@
     const timeSlots = (_pc.timeSlots && _pc.timeSlots.length)
       ? _pc.timeSlots
       : ['10:00','10:30','11:00','11:30','12:00','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
+    const mailruBusyCache = new Map();
+    let mailruSourceEmployeeId = _pc.mailruEmployeeId || _pc.mailruEmployee?.id || '';
+    let mailruSourceLoaded = Boolean(mailruSourceEmployeeId);
+    let mailruAvailabilityLoading = false;
+    let mailruAvailabilityToken = 0;
+    const defaultMeetingDurationMinutes = Math.max(15, Number(_pc.meetingDurationMinutes || _pc.meetingDuration || _pc.durationMinutes || 60) || 60);
 
     const _allowedWeekdays = (_pc.weekdays && _pc.weekdays.length) ? _pc.weekdays : [1,2,3,4,5];
     const _daysAhead = _pc.daysAhead || 7;
@@ -1209,9 +1215,88 @@
       return found.date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', weekday: 'short' });
     }
 
+    function getSlotStart(dateId, slot) {
+      return new Date(`${dateId}T${slot}:00`);
+    }
+
+    function getSlotEnd(dateId, slot, durationMinutes = defaultMeetingDurationMinutes) {
+      return new Date(getSlotStart(dateId, slot).getTime() + durationMinutes * 60000);
+    }
+
+    function slotOverlapsBusy(dateId, slot, durationMinutes, busySlots) {
+      const slotStart = getSlotStart(dateId, slot).getTime();
+      const slotEnd = getSlotEnd(dateId, slot, durationMinutes).getTime();
+      return (busySlots || []).some((busy) => {
+        const busyStart = new Date(busy.start).getTime();
+        const busyEnd = new Date(busy.end).getTime();
+        return Number.isFinite(busyStart) && Number.isFinite(busyEnd) && busyStart < slotEnd && busyEnd > slotStart;
+      });
+    }
+
     function availableSlots(dateId) {
       const idx = businessDates.findIndex((d) => d.id === dateId);
-      return timeSlots.filter((slot, i) => (i + idx) % 4 !== 0);
+      const busySlots = mailruBusyCache.get(dateId) || [];
+      return timeSlots.filter((slot, i) => (i + idx) % 4 !== 0 && !slotOverlapsBusy(dateId, slot, defaultMeetingDurationMinutes, busySlots));
+    }
+
+    function getMailruSourceEmployeeIdFromResponse(data) {
+      if (!data || !data.enabled || !data.employees) return '';
+      if (mailruSourceEmployeeId && data.employees[mailruSourceEmployeeId]) return mailruSourceEmployeeId;
+      const firstEnabled = Object.entries(data.employees).find(([, employee]) => (
+        employee && employee.account && employee.hasPassword && employee.selectedCalendarUrl
+      ));
+      return firstEnabled ? firstEnabled[0] : '';
+    }
+
+    async function ensureMailruAvailability(dateId) {
+      if (!dateId) return;
+      const token = ++mailruAvailabilityToken;
+
+      if (!mailruSourceLoaded) {
+        try {
+          const response = await fetch('/api/integrations/mailru', { credentials: 'same-origin' });
+          if (response.ok) {
+            const data = await response.json();
+            mailruSourceEmployeeId = getMailruSourceEmployeeIdFromResponse(data);
+          }
+        } catch {
+          // Ignore and fall back to local schedule only.
+        } finally {
+          mailruSourceLoaded = true;
+        }
+      }
+
+      if (!mailruSourceEmployeeId || mailruBusyCache.has(dateId)) return;
+
+      mailruAvailabilityLoading = true;
+      renderTimes();
+
+      try {
+        const from = new Date(`${dateId}T00:00:00`);
+        const to = new Date(`${dateId}T23:59:59`);
+        const response = await fetch('/api/integrations/mailru/availability', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            employeeId: mailruSourceEmployeeId,
+            from: from.toISOString(),
+            to: to.toISOString()
+          })
+        });
+        if (!response.ok) throw new Error(`Mail.ru availability ${response.status}`);
+        const data = await response.json();
+        if (token !== mailruAvailabilityToken) return;
+        mailruBusyCache.set(dateId, Array.isArray(data.busySlots) ? data.busySlots : []);
+      } catch {
+        if (token !== mailruAvailabilityToken) return;
+        mailruBusyCache.set(dateId, []);
+      } finally {
+        if (token === mailruAvailabilityToken) {
+          mailruAvailabilityLoading = false;
+          renderTimes();
+        }
+      }
     }
 
     function renderPanels() {
@@ -1246,6 +1331,7 @@
           state.selectedTime = null;
           renderDates();
           renderTimes();
+          ensureMailruAvailability(d.id);
           toggleSlotNext();
           renderInlineSummary();
         });
@@ -1264,16 +1350,27 @@
       refs.timeWrap.classList.remove('hidden');
 
       const allowed = availableSlots(state.selectedDate);
+      const busySlots = mailruBusyCache.get(state.selectedDate) || [];
+      const selectedSlotBusy = state.selectedTime
+        ? slotOverlapsBusy(state.selectedDate, state.selectedTime, defaultMeetingDurationMinutes, busySlots)
+        : false;
+      const selectedSlotAllowed = state.selectedTime ? allowed.includes(state.selectedTime) : false;
+      if (state.selectedTime && (!selectedSlotAllowed || selectedSlotBusy)) {
+        state.selectedTime = null;
+        toggleSlotNext();
+        renderInlineSummary();
+      }
 
       timeSlots.forEach((slot) => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'option';
         const isAllowed = allowed.includes(slot);
+        const isBusy = slotOverlapsBusy(state.selectedDate, slot, defaultMeetingDurationMinutes, busySlots);
 
-        if (!isAllowed) {
+        if (!isAllowed || isBusy) {
           btn.classList.add('disabled');
-          btn.textContent = slot;
+          btn.innerHTML = `${slot}<small>${isBusy ? 'занято' : 'недоступно'}</small>`;
         } else {
           btn.innerHTML = `${slot}<small>доступно</small>`;
         }
@@ -1281,7 +1378,7 @@
         if (state.selectedTime === slot) btn.classList.add('selected');
 
         btn.addEventListener('click', () => {
-          if (!isAllowed) return;
+          if (!isAllowed || isBusy) return;
           state.selectedTime = slot;
           renderTimes();
           toggleSlotNext();
@@ -1290,6 +1387,13 @@
 
         refs.timeGrid.appendChild(btn);
       });
+
+      if (mailruAvailabilityLoading) {
+        const loading = document.createElement('div');
+        loading.className = 'hint';
+        loading.textContent = 'Проверяем занятость календаря Mail.ru...';
+        refs.timeGrid.appendChild(loading);
+      }
     }
 
     function toggleSlotNext() {
