@@ -438,26 +438,54 @@ async function discoverMailruCalendars({ account, password }) {
 </d:propfind>`
   });
 
-  const calendars = getResponses(calendarsResponse.text)
-    .filter(responseXml => /<(?:[A-Za-z0-9_-]+:)?calendar(?:\s*\/>|>)/i.test(responseXml))
+  const responseBlocks = getResponses(calendarsResponse.text);
+  const calendars = responseBlocks
     .map(responseXml => {
       const href = getTagValue(responseXml, 'href');
+      if (!href) return null;
+      const resolvedUrl = toAbsoluteUrl(rootUrl, href);
       const displayName = getTagValue(responseXml, 'displayname') || 'Без названия';
+      const contentType = (getTagValue(responseXml, 'getcontenttype') || '').toLowerCase();
+      const resourceTypeXml = responseXml.toLowerCase();
+      const looksLikeCalendar =
+        /<(?:[a-z0-9_-]+:)?calendar(?:\s*\/>|>)/i.test(responseXml) ||
+        /text\/calendar/i.test(contentType) ||
+        /vnd\.caldav/i.test(contentType) ||
+        (resourceTypeXml.includes('calendar') && !resourceTypeXml.includes('principal'));
+      if (!looksLikeCalendar) return null;
       return {
-        url: toAbsoluteUrl(rootUrl, href),
+        url: resolvedUrl,
         name: displayName
       };
     })
-    .filter(calendar => calendar.url);
+    .filter(Boolean);
 
-  if (!calendars.length) {
-    throw new Error('У аккаунта Mail.ru не найдено ни одного доступного календаря');
+  const fallbackCalendars = calendars.length
+    ? calendars
+    : responseBlocks
+        .map(responseXml => {
+          const href = getTagValue(responseXml, 'href');
+          if (!href) return null;
+          const resolvedUrl = toAbsoluteUrl(rootUrl, href);
+          if (resolvedUrl === homeUrl) return null;
+          const displayName = getTagValue(responseXml, 'displayname') || 'Без названия';
+          return {
+            url: resolvedUrl,
+            name: displayName
+          };
+        })
+        .filter(Boolean);
+
+  const finalCalendars = calendars.length ? calendars : fallbackCalendars;
+
+  if (!finalCalendars.length) {
+    throw new Error(`У аккаунта Mail.ru не найдено ни одного доступного календаря. Ответ сервера: ${calendarsResponse.text.slice(0, 240)}`);
   }
 
   return {
     principalUrl,
     homeUrl,
-    calendars
+    calendars: finalCalendars
   };
 }
 
