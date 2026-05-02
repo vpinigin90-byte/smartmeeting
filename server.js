@@ -29,12 +29,8 @@ const MIME_TYPES = {
 
 const MAILRU_DEFAULT_CONFIG = {
   enabled: false,
-  account: '',
-  password: '',
-  calendars: [],
-  employeeBindings: {},
-  updatedAt: null,
-  lastValidatedAt: null
+  employees: {},
+  updatedAt: null
 };
 
 function send(res, statusCode, body, contentType) {
@@ -109,10 +105,11 @@ function loadMailruConfig() {
     return {
       ...MAILRU_DEFAULT_CONFIG,
       ...parsed,
-      calendars: Array.isArray(parsed.calendars) ? parsed.calendars : [],
-      employeeBindings: parsed.employeeBindings && typeof parsed.employeeBindings === 'object'
-        ? parsed.employeeBindings
-        : {}
+      employees: parsed.employees && typeof parsed.employees === 'object'
+        ? parsed.employees
+        : parsed.employeeBindings && typeof parsed.employeeBindings === 'object'
+          ? parsed.employeeBindings
+          : {}
     };
   } catch (error) {
     return { ...MAILRU_DEFAULT_CONFIG };
@@ -132,16 +129,24 @@ function maskAccount(account) {
 }
 
 function mailruPublicConfig(config) {
+  const employees = {};
+  for (const [employeeId, employeeState] of Object.entries(config.employees || {})) {
+    employees[employeeId] = {
+      account: employeeState.account || '',
+      maskedAccount: maskAccount(employeeState.account || ''),
+      hasPassword: Boolean(employeeState.password),
+      calendars: Array.isArray(employeeState.calendars) ? employeeState.calendars : [],
+      selectedCalendarUrl: employeeState.selectedCalendarUrl || '',
+      selectedCalendarName: employeeState.selectedCalendarName || '',
+      updatedAt: employeeState.updatedAt || null,
+      lastValidatedAt: employeeState.lastValidatedAt || null
+    };
+  }
   return {
     ok: true,
     enabled: !!config.enabled,
-    account: config.account || '',
-    maskedAccount: maskAccount(config.account || ''),
-    hasPassword: Boolean(config.password),
-    calendars: Array.isArray(config.calendars) ? config.calendars : [],
-    employeeBindings: config.employeeBindings || {},
-    updatedAt: config.updatedAt || null,
-    lastValidatedAt: config.lastValidatedAt || null
+    employees,
+    updatedAt: config.updatedAt || null
   };
 }
 
@@ -497,11 +502,35 @@ async function handleApi(req, res, requestUrl) {
     return sendJson(res, 200, mailruPublicConfig(loadMailruConfig()));
   }
 
-  if (req.method === 'POST' && requestUrl.pathname === '/api/integrations/mailru/test') {
+  if (req.method === 'POST' && requestUrl.pathname === '/api/integrations/mailru') {
     try {
       const body = await readJsonBody(req);
+      const currentConfig = loadMailruConfig();
+      const enabled = Boolean(body.enabled);
+      const nextConfig = {
+        ...currentConfig,
+        enabled,
+        employees: enabled ? (currentConfig.employees || {}) : {},
+        updatedAt: new Date().toISOString()
+      };
+      saveMailruConfig(nextConfig);
+      return sendJson(res, 200, mailruPublicConfig(nextConfig));
+    } catch (error) {
+      return sendError(res, error.statusCode || 500, error.message);
+    }
+  }
+
+  if (req.method === 'POST' && requestUrl.pathname === '/api/integrations/mailru/employee/test') {
+    try {
+      const body = await readJsonBody(req);
+      const currentConfig = loadMailruConfig();
+      const employeeId = String(body.employeeId || '').trim();
       const account = String(body.account || '').trim();
-      const password = String(body.password || '').trim();
+      const currentEmployee = currentConfig.employees?.[employeeId] || {};
+      const password = String(body.password || '').trim() || decryptSecret(currentEmployee.password || '');
+      if (!employeeId) {
+        return sendError(res, 400, 'Не передан сотрудник для настройки Mail.ru');
+      }
       if (!account || !password) {
         return sendError(res, 400, 'Укажите email Mail.ru и пароль внешнего приложения');
       }
@@ -509,6 +538,7 @@ async function handleApi(req, res, requestUrl) {
       const result = await discoverMailruCalendars({ account, password });
       return sendJson(res, 200, {
         ok: true,
+        employeeId,
         account,
         calendars: result.calendars,
         principalUrl: result.principalUrl,
@@ -519,25 +549,26 @@ async function handleApi(req, res, requestUrl) {
     }
   }
 
-  if (req.method === 'POST' && requestUrl.pathname === '/api/integrations/mailru') {
+  if (req.method === 'POST' && requestUrl.pathname === '/api/integrations/mailru/employee') {
     try {
       const body = await readJsonBody(req);
       const currentConfig = loadMailruConfig();
+      const employeeId = String(body.employeeId || '').trim();
+      if (!employeeId) {
+        return sendError(res, 400, 'Не передан сотрудник для сохранения настройки Mail.ru');
+      }
       const account = String(body.account || '').trim();
       const password = String(body.password || '').trim();
-      const enabled = Boolean(body.enabled);
-      const employeeBindings = body.employeeBindings && typeof body.employeeBindings === 'object'
-        ? body.employeeBindings
-        : {};
-
-      const storedPassword = password || decryptSecret(currentConfig.password || '');
-      let calendars = currentConfig.calendars || [];
-      let validatedAt = currentConfig.lastValidatedAt || null;
+      const selectedCalendarUrl = String(body.selectedCalendarUrl || '').trim();
+      const selectedCalendarName = String(body.selectedCalendarName || '').trim();
+      const currentEmployee = currentConfig.employees?.[employeeId] || {};
+      const storedPassword = password || decryptSecret(currentEmployee.password || '');
+      let calendars = Array.isArray(currentEmployee.calendars) ? currentEmployee.calendars : [];
+      let validatedAt = currentEmployee.lastValidatedAt || null;
       const needsValidation =
-        enabled ||
         Boolean(password) ||
-        (Boolean(account) && !currentConfig.password) ||
-        (Boolean(account) && account !== currentConfig.account);
+        (Boolean(account) && !currentEmployee.password) ||
+        (Boolean(account) && account !== currentEmployee.account);
 
       if (needsValidation) {
         if (!account) {
@@ -551,40 +582,104 @@ async function handleApi(req, res, requestUrl) {
         validatedAt = new Date().toISOString();
       }
 
-      const nextConfig = {
-        enabled,
+      const resolvedCalendar = calendars.find(calendar => calendar.url === selectedCalendarUrl);
+      const nextEmployee = {
+        ...currentEmployee,
         account,
-        password: storedPassword ? encryptSecret(storedPassword) : '',
+        password: storedPassword ? encryptSecret(storedPassword) : currentEmployee.password || '',
         calendars,
-        employeeBindings,
+        selectedCalendarUrl: resolvedCalendar?.url || selectedCalendarUrl || '',
+        selectedCalendarName: resolvedCalendar?.name || selectedCalendarName || '',
         updatedAt: new Date().toISOString(),
         lastValidatedAt: validatedAt
       };
 
+      const nextConfig = {
+        ...currentConfig,
+        employees: {
+          ...(currentConfig.employees || {}),
+          [employeeId]: nextEmployee
+        },
+        updatedAt: new Date().toISOString(),
+      };
+
       saveMailruConfig(nextConfig);
-      return sendJson(res, 200, mailruPublicConfig(nextConfig));
+      return sendJson(res, 200, {
+        ok: true,
+        employeeId,
+        employee: mailruPublicConfig(nextConfig).employees[employeeId]
+      });
     } catch (error) {
       return sendError(res, error.statusCode || 500, error.message);
     }
   }
 
-  if (req.method === 'POST' && requestUrl.pathname === '/api/integrations/mailru/refresh') {
+  if (req.method === 'POST' && requestUrl.pathname === '/api/integrations/mailru/employee/refresh') {
     try {
+      const body = await readJsonBody(req);
       const currentConfig = loadMailruConfig();
-      const account = String(currentConfig.account || '').trim();
-      const password = decryptSecret(currentConfig.password || '');
+      const employeeId = String(body.employeeId || '').trim();
+      const currentEmployee = currentConfig.employees?.[employeeId] || {};
+      const account = String(currentEmployee.account || '').trim();
+      const password = decryptSecret(currentEmployee.password || '');
       if (!account || !password) {
         return sendError(res, 400, 'Сначала сохраните аккаунт Mail.ru и пароль внешнего приложения');
       }
       const discovery = await discoverMailruCalendars({ account, password });
       const nextConfig = {
         ...currentConfig,
-        calendars: discovery.calendars,
-        updatedAt: new Date().toISOString(),
-        lastValidatedAt: new Date().toISOString()
+        employees: {
+          ...(currentConfig.employees || {}),
+          [employeeId]: {
+            ...currentEmployee,
+            calendars: discovery.calendars,
+            updatedAt: new Date().toISOString(),
+            lastValidatedAt: new Date().toISOString()
+          }
+        },
+        updatedAt: new Date().toISOString()
       };
       saveMailruConfig(nextConfig);
-      return sendJson(res, 200, mailruPublicConfig(nextConfig));
+      return sendJson(res, 200, {
+        ok: true,
+        employeeId,
+        employee: mailruPublicConfig(nextConfig).employees[employeeId]
+      });
+    } catch (error) {
+      return sendError(res, error.statusCode || 500, error.message);
+    }
+  }
+
+  if (req.method === 'POST' && requestUrl.pathname === '/api/integrations/mailru/employee/reset') {
+    try {
+      const body = await readJsonBody(req);
+      const currentConfig = loadMailruConfig();
+      const employeeId = String(body.employeeId || '').trim();
+      if (!employeeId) {
+        return sendError(res, 400, 'Не передан сотрудник для сброса Mail.ru настройки');
+      }
+      const nextConfig = {
+        ...currentConfig,
+        employees: {
+          ...(currentConfig.employees || {}),
+          [employeeId]: {
+            account: '',
+            password: '',
+            calendars: [],
+            selectedCalendarUrl: '',
+            selectedCalendarName: '',
+            updatedAt: new Date().toISOString(),
+            lastValidatedAt: null
+          }
+        },
+        updatedAt: new Date().toISOString()
+      };
+      saveMailruConfig(nextConfig);
+      return sendJson(res, 200, {
+        ok: true,
+        employeeId,
+        employee: mailruPublicConfig(nextConfig).employees[employeeId]
+      });
     } catch (error) {
       return sendError(res, error.statusCode || 500, error.message);
     }
@@ -594,13 +689,14 @@ async function handleApi(req, res, requestUrl) {
     try {
       const body = await readJsonBody(req);
       const currentConfig = loadMailruConfig();
-      const account = String(currentConfig.account || '').trim();
-      const password = decryptSecret(currentConfig.password || '');
+      const employeeId = String(body.employeeId || '').trim();
+      const employeeState = currentConfig.employees?.[employeeId] || {};
+      const account = String(employeeState.account || '').trim();
+      const password = decryptSecret(employeeState.password || '');
       if (!account || !password) {
         return sendError(res, 400, 'Интеграция Mail.ru ещё не настроена');
       }
 
-      const employeeId = String(body.employeeId || '').trim();
       const from = body.from ? new Date(body.from) : null;
       const to = body.to ? new Date(body.to) : null;
       if (!employeeId) {
@@ -610,11 +706,10 @@ async function handleApi(req, res, requestUrl) {
         return sendError(res, 400, 'Укажите корректный диапазон дат');
       }
 
-      const binding = currentConfig.employeeBindings?.[employeeId];
       const calendarUrl = typeof body.calendarUrl === 'string' && body.calendarUrl.trim()
         ? body.calendarUrl.trim()
-        : binding?.calendarUrl;
-      const calendarName = binding?.calendarName || '';
+        : employeeState.selectedCalendarUrl;
+      const calendarName = employeeState.selectedCalendarName || '';
       if (!calendarUrl) {
         return sendError(res, 400, 'Для сотрудника не выбран календарь Mail.ru');
       }

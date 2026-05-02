@@ -10,6 +10,7 @@
   <style>
     :root {
       /* ── Logo palette: #3B8ED9 (blue) → #17BCA8 (teal) ── */
+      --page-bg:      #000000;
       --bg:           #040C10;
       --bg-glow:      #091620;
       --card:         #0A1620;
@@ -18,6 +19,15 @@
       --line-strong:  rgba(23, 188, 168, 0.52);
       --text:         #DDF0F4;
       --muted:        #7AAAB5;
+      --heading:      #F0F8E2;
+      --control-bg:   #090D08;
+      --control-text: #E8F3FF;
+      --btn-primary-text: #F1F7DF;
+      --btn-accent-text:  #202900;
+      --btn-secondary-text: #CEDDB7;
+      --btn-primary-bg: linear-gradient(180deg, #141a11 0%, #0a0d08 100%);
+      --btn-accent-bg: linear-gradient(180deg, #dcff62 0%, #17BCA8 65%);
+      --btn-secondary-bg: linear-gradient(180deg, rgba(18, 23, 14, 0.7) 0%, rgba(10, 14, 9, 0.86) 100%);
       --primary:      #091620;
       --accent:       #17BCA8;
       --accent-soft:  rgba(23, 188, 168, 0.12);
@@ -29,6 +39,14 @@
       --ok:           #17D4BE;
       --radius-lg:    20px;
       --radius-md:    12px;
+      --body-font: "Manrope", "Segoe UI", sans-serif;
+      --heading-font: "Unbounded", "Manrope", sans-serif;
+      --widget-title-size: 28px;
+      --section-title-size: 22px;
+      --body-text-size: 14px;
+      --helper-text-size: 13px;
+      --label-text-size: 12px;
+      --button-text-size: 13px;
       --shadow:       0 26px 52px rgba(0, 0, 0, 0.45);
     }
 
@@ -41,9 +59,16 @@
       margin: 0;
       width: 100%;
       min-height: 100%;
-      font-family: "Manrope", "Segoe UI", sans-serif;
+      font-family: var(--body-font);
       color: var(--text);
-      background: #000000;
+      background: var(--page-bg);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
     }
 
     body::before {
@@ -61,7 +86,7 @@
 
     .card {
       position: relative;
-      background: #000000;
+      background: var(--card);
       border: 1px solid var(--line);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow);
@@ -80,7 +105,7 @@
     }
 
     .head {
-      background: #000000;
+      background: var(--card);
       border-bottom: 1px solid var(--line-strong);
       color: var(--text);
       padding: 18px 20px;
@@ -88,22 +113,21 @@
 
     .head h1 {
       margin: 0;
-      font-family: "Unbounded", inherit;
+      font-family: var(--heading-font);
       text-transform: uppercase;
-      font-size: 28px;
+      font-size: var(--widget-title-size);
       letter-spacing: 0.05em;
       line-height: 1.28;
-      color: #f3f8e6;
+      color: var(--heading);
       text-shadow: 0 0 18px rgba(123, 255, 191, 0.18);
     }
 
     .head p {
-      font-family: inherit;
       margin: 10px 0 0;
-      font-size: 13px;
+      font-size: var(--helper-text-size);
       letter-spacing: 0.03em;
       text-transform: uppercase;
-      color: #c0d0b2;
+      color: var(--muted);
     }
 
     .body {
@@ -132,19 +156,18 @@
 
     h2 {
       margin: 0;
-      font-family: "Unbounded", inherit;
-      font-size: 22px;
+      font-family: var(--heading-font);
+      font-size: var(--section-title-size);
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      color: #f0f8e2;
+      color: var(--heading);
       text-shadow: 0 0 12px rgba(123, 255, 191, 0.14);
     }
 
     .subtitle {
-      font-family: inherit;
       margin: 8px 0 16px;
       color: var(--muted);
-      font-size: 14px;
+      font-size: var(--body-text-size);
       line-height: 1.45;
     }
 
@@ -169,11 +192,11 @@
 
     .time-title {
       margin-bottom: 8px;
-      font-size: 12px;
+      font-size: var(--label-text-size);
       font-family: inherit;
       font-weight: 700;
       letter-spacing: 0.08em;
-      color: #b7cf8c;
+      color: var(--muted);
       text-transform: uppercase;
     }
 
@@ -184,22 +207,22 @@
     .hint {
       font-family: inherit;
       margin-top: 8px;
-      font-size: 13px;
-      color: #93a789;
+      font-size: var(--helper-text-size);
+      color: var(--muted);
       font-weight: 700;
     }
 
     .option {
       border: 1px solid var(--line);
       border-radius: var(--radius-md);
-      background: #0b0f09;
+      background: var(--control-bg);
       min-height: 56px;
       padding: 8px;
       text-align: center;
       font: inherit;
-      font-size: 14px;
+      font-size: var(--body-text-size);
       font-weight: 800;
-      color: #e1edd0;
+      color: var(--control-text);
       cursor: pointer;
       transition: 0.18s ease;
       box-shadow: inset 0 0 0 1px rgba(80, 175, 185, 0.09);
@@ -208,7 +231,7 @@
     .option small {
       display: block;
       margin-top: 3px;
-      font-size: 11px;
+      font-size: calc(var(--helper-text-size) - 2px);
       color: #9caf8b;
       font-weight: 700;
       text-transform: uppercase;
@@ -244,10 +267,10 @@
 
     .summary {
       border: 1px solid rgba(80, 175, 185, 0.45);
-      background: #10160b;
-      border-radius: 12px;
+      background: var(--card-2);
+      border-radius: var(--radius-md);
       padding: 11px 12px;
-      font-size: 13px;
+      font-size: var(--helper-text-size);
       color: #d8e9c8;
       margin-bottom: 12px;
       font-weight: 700;
@@ -294,11 +317,11 @@
     }
 
     .field label {
-      font-size: 12px;
+      font-size: var(--label-text-size);
       font-family: inherit;
       font-weight: 600;
       letter-spacing: 0.07em;
-      color: #a8bd8d;
+      color: var(--muted);
       text-transform: uppercase;
     }
 
@@ -307,23 +330,23 @@
       display: block;
       margin-top: 4px;
       font-family: inherit;
-      font-size: 11px;
+      font-size: calc(var(--helper-text-size) - 2px);
       font-weight: 600;
       letter-spacing: 0;
       text-transform: none;
-      color: #8ea086;
+      color: var(--muted);
     }
 
     .field input,
     .field textarea {
       width: 100%;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #090d08;
+      border-radius: var(--radius-md);
+      background: var(--control-bg);
       padding: 11px 12px;
       font: inherit;
-      font-size: 14px;
-      color: #e8f3ff;
+      font-size: var(--body-text-size);
+      color: var(--control-text);
       transition: 0.18s ease;
     }
 
@@ -334,7 +357,7 @@
 
     .field input::placeholder,
     .field textarea::placeholder {
-      color: #8f9f79;
+      color: var(--muted);
     }
 
     .field input:focus,
@@ -353,7 +376,7 @@
     .error {
       min-height: 14px;
       color: var(--danger);
-      font-size: 12px;
+      font-size: var(--label-text-size);
       font-weight: 700;
     }
 
@@ -363,18 +386,18 @@
       justify-content: space-between;
       gap: 12px;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #090d08;
+      border-radius: var(--radius-md);
+      background: var(--control-bg);
       padding: 9px 10px;
     }
 
     .toggle-text {
       margin: 0;
-      font-size: 13px;
+      font-size: var(--body-text-size);
       font-weight: 600;
       letter-spacing: 0;
       text-transform: none;
-      color: #c8d8b6;
+      color: var(--control-text);
       font-family: inherit;
       line-height: 1.35;
     }
@@ -441,8 +464,8 @@
       border-radius: 999px;
       background: rgba(23, 188, 168, 0.14);
       border: 1px solid rgba(23, 188, 168, 0.36);
-      color: #e7f4c9;
-      font-size: 12px;
+      color: var(--control-text);
+      font-size: var(--label-text-size);
       font-weight: 700;
       padding: 6px 10px;
     }
@@ -454,7 +477,7 @@
       color: #b6cf7f;
       font-weight: 800;
       padding: 0;
-      font-size: 14px;
+      font-size: var(--body-text-size);
       line-height: 1;
     }
 
@@ -467,11 +490,11 @@
 
     .topic-btn {
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: linear-gradient(180deg, rgba(19, 25, 16, 0.78) 0%, rgba(11, 14, 10, 0.9) 100%);
-      color: #e0eccd;
+      border-radius: var(--radius-md);
+      background: var(--control-bg);
+      color: var(--control-text);
       font: inherit;
-      font-size: 14px;
+      font-size: var(--body-text-size);
       font-weight: 800;
       min-height: 46px;
       cursor: pointer;
@@ -501,11 +524,11 @@
 
     .team-btn {
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: linear-gradient(180deg, rgba(19, 25, 16, 0.78) 0%, rgba(11, 14, 10, 0.9) 100%);
-      color: #e0eccd;
+      border-radius: var(--radius-md);
+      background: var(--control-bg);
+      color: var(--control-text);
       font: inherit;
-      font-size: 14px;
+      font-size: var(--body-text-size);
       font-weight: 800;
       min-height: 44px;
       cursor: pointer;
@@ -535,11 +558,11 @@
 
     .btn {
       min-height: 44px;
-      border-radius: 12px;
+      border-radius: var(--radius-md);
       border: 1px solid transparent;
       padding: 0 16px;
       font: inherit;
-      font-size: 14px;
+      font-size: var(--button-text-size);
       font-weight: 800;
       letter-spacing: 0.02em;
       cursor: pointer;
@@ -548,9 +571,9 @@
     }
 
     .btn.primary {
-      background: linear-gradient(180deg, #141a11 0%, #0a0d08 100%);
+      background: var(--btn-primary-bg);
       border-color: rgba(23, 188, 168, 0.34);
-      color: #f1f7df;
+      color: var(--btn-primary-text);
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
     }
 
@@ -560,16 +583,16 @@
     }
 
     .btn.accent {
-      background: linear-gradient(180deg, #dcff62 0%, #17BCA8 65%);
-      color: #202900;
+      background: var(--btn-accent-bg);
+      color: var(--btn-accent-text);
       border-color: rgba(23, 188, 168, 0.55);
       box-shadow: 0 10px 26px rgba(23, 188, 168, 0.3);
     }
 
     .btn.secondary {
       border-color: var(--line);
-      background: linear-gradient(180deg, rgba(18, 23, 14, 0.7) 0%, rgba(10, 14, 9, 0.86) 100%);
-      color: #ceddb7;
+      background: var(--btn-secondary-bg);
+      color: var(--btn-secondary-text);
     }
 
     .btn:disabled {
@@ -607,8 +630,8 @@
 
     .success h3 {
       margin: 0 0 8px;
-      font-family: "Unbounded", inherit;
-      font-size: 24px;
+      font-family: var(--heading-font);
+      font-size: var(--section-title-size);
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: #f3fff9;
@@ -617,7 +640,7 @@
     .success p {
       margin: 0;
       color: #c6d8b3;
-      font-size: 14px;
+      font-size: var(--body-text-size);
       line-height: 1.5;
     }
 
@@ -627,7 +650,7 @@
       border-radius: 10px;
       background: rgba(8, 12, 7, 0.72);
       padding: 10px 12px;
-      font-size: 14px;
+      font-size: var(--body-text-size);
       color: #e0eccd;
       font-weight: 700;
       line-height: 1.5;
@@ -651,7 +674,7 @@
       }
 
       .head h1 {
-        font-size: 24px;
+        font-size: calc(var(--widget-title-size) * 0.86);
       }
     }
 
@@ -665,7 +688,7 @@
       }
 
       .head h1 {
-        font-size: 19px;
+        font-size: calc(var(--widget-title-size) * 0.68);
       }
 
       .date-grid,
@@ -868,6 +891,70 @@
     const _widgetCfg = _readSavedWidgetCfg();
     const _pc = _urlCfg || _previewCfg || _widgetCfg || {};
 
+    const FONT_PRESETS = {
+      manrope: {
+        family: '"Manrope", "Segoe UI", sans-serif',
+        cssUrl: 'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap'
+      },
+      inter: {
+        family: '"Inter", "Segoe UI", sans-serif',
+        cssUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'
+      },
+      nunito: {
+        family: '"Nunito Sans", "Segoe UI", sans-serif',
+        cssUrl: 'https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap'
+      },
+      ibmplex: {
+        family: '"IBM Plex Sans", "Segoe UI", sans-serif',
+        cssUrl: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap'
+      },
+      source: {
+        family: '"Source Sans 3", "Segoe UI", sans-serif',
+        cssUrl: 'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;800&display=swap'
+      },
+      unbounded: {
+        family: '"Unbounded", "Manrope", sans-serif',
+        cssUrl: 'https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700;800&display=swap'
+      },
+      spacegrotesk: {
+        family: '"Space Grotesk", "Inter", sans-serif',
+        cssUrl: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap'
+      },
+      montserrat: {
+        family: '"Montserrat", "Inter", sans-serif',
+        cssUrl: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap'
+      },
+      oswald: {
+        family: '"Oswald", "Arial Narrow", sans-serif',
+        cssUrl: 'https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap'
+      },
+      playfair: {
+        family: '"Playfair Display", Georgia, serif',
+        cssUrl: 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap'
+      }
+    };
+    function _getFontPreset(id, fallback) {
+      return FONT_PRESETS[id] || FONT_PRESETS[fallback] || FONT_PRESETS.manrope;
+    }
+    function _resolveFontFamily(id, customFamily, fallback) {
+      if (id === 'custom') return (customFamily || '').trim() || _getFontPreset(fallback, fallback).family;
+      return _getFontPreset(id, fallback).family;
+    }
+    function _ensureFontLink(id, href) {
+      let link = document.getElementById(id);
+      if (!href) {
+        if (link) link.remove();
+        return;
+      }
+      if (!link) {
+        link = document.createElement('link');
+        link.id = id;
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+      }
+      if (link.href !== href) link.href = href;
+    }
+
     // CSS variables
     if (_pc.accentColor) {
       function _hexRgba(hex, a) {
@@ -878,16 +965,82 @@
       document.documentElement.style.setProperty('--accent-soft', _hexRgba(_pc.accentColor, 0.12));
       document.documentElement.style.setProperty('--line-strong', _hexRgba(_pc.accentColor, 0.52));
     }
+    if (_pc.pageBgColor) {
+      document.documentElement.style.setProperty('--page-bg', _pc.pageBgColor);
+    }
     if (_pc.bgColor) {
       document.documentElement.style.setProperty('--card', _pc.bgColor);
       document.documentElement.style.setProperty('--primary', _pc.bgColor);
     }
+    if (_pc.textColor) {
+      document.documentElement.style.setProperty('--text', _pc.textColor);
+    }
+    if (_pc.mutedTextColor) {
+      document.documentElement.style.setProperty('--muted', _pc.mutedTextColor);
+    }
+    if (_pc.headingColor) {
+      document.documentElement.style.setProperty('--heading', _pc.headingColor);
+    }
+    if (_pc.controlBgColor) {
+      document.documentElement.style.setProperty('--control-bg', _pc.controlBgColor);
+      document.documentElement.style.setProperty('--card-2', _pc.controlBgColor);
+    }
+    if (_pc.controlTextColor) {
+      document.documentElement.style.setProperty('--control-text', _pc.controlTextColor);
+    }
+    if (_pc.primaryButtonTextColor) {
+      document.documentElement.style.setProperty('--btn-primary-text', _pc.primaryButtonTextColor);
+      document.documentElement.style.setProperty('--btn-secondary-text', _pc.primaryButtonTextColor);
+    }
+    if (_pc.accentButtonTextColor) {
+      document.documentElement.style.setProperty('--btn-accent-text', _pc.accentButtonTextColor);
+    }
+    const primaryFillMode = _pc.primaryButtonFillMode || _pc.buttonFillMode || 'gradient';
+    const accentFillMode = _pc.accentButtonFillMode || _pc.buttonFillMode || 'gradient';
+    if (primaryFillMode === 'mono') {
+      const controlBg = _pc.controlBgColor || '#090D08';
+      document.documentElement.style.setProperty('--btn-primary-bg', controlBg);
+      document.documentElement.style.setProperty('--btn-secondary-bg', controlBg);
+    } else {
+      const controlBg = _pc.controlBgColor || '#090D08';
+      document.documentElement.style.setProperty('--btn-primary-bg', `linear-gradient(180deg, ${controlBg} 0%, #0a0d08 100%)`);
+      document.documentElement.style.setProperty('--btn-secondary-bg', `linear-gradient(180deg, ${controlBg} 0%, #0a0d08 100%)`);
+    }
+    if (accentFillMode === 'mono') {
+      const accent = _pc.accentColor || '#17BCA8';
+      document.documentElement.style.setProperty('--btn-accent-bg', accent);
+    } else {
+      const accent = _pc.accentColor || '#17BCA8';
+      document.documentElement.style.setProperty('--btn-accent-bg', `linear-gradient(180deg, color-mix(in srgb, ${accent} 18%, #dcff62) 0%, ${accent} 75%)`);
+    }
     if (_pc.borderRadius != null)
       document.documentElement.style.setProperty('--radius-lg', _pc.borderRadius + 'px');
+    if (_pc.controlRadius != null)
+      document.documentElement.style.setProperty('--radius-md', _pc.controlRadius + 'px');
+    const bodyFontPreset = _pc.bodyFontPreset || 'manrope';
+    const headingFontPreset = _pc.headingFontPreset || 'unbounded';
+    _ensureFontLink('widget-body-font-link', bodyFontPreset === 'custom' ? null : _getFontPreset(bodyFontPreset, 'manrope').cssUrl);
+    _ensureFontLink('widget-heading-font-link', headingFontPreset === 'custom' ? null : _getFontPreset(headingFontPreset, 'unbounded').cssUrl);
+    _ensureFontLink('widget-custom-font-link', (_pc.fontCssUrl || '').trim() || null);
+    document.documentElement.style.setProperty('--body-font', _resolveFontFamily(bodyFontPreset, _pc.customBodyFontFamily, 'manrope'));
+    document.documentElement.style.setProperty('--heading-font', _resolveFontFamily(headingFontPreset, _pc.customHeadingFontFamily, 'unbounded'));
+    if (_pc.widgetTitleSize != null)
+      document.documentElement.style.setProperty('--widget-title-size', _pc.widgetTitleSize + 'px');
+    if (_pc.sectionTitleSize != null)
+      document.documentElement.style.setProperty('--section-title-size', _pc.sectionTitleSize + 'px');
+    if (_pc.bodyTextSize != null)
+      document.documentElement.style.setProperty('--body-text-size', _pc.bodyTextSize + 'px');
+    if (_pc.helperTextSize != null)
+      document.documentElement.style.setProperty('--helper-text-size', _pc.helperTextSize + 'px');
+    if (_pc.labelTextSize != null)
+      document.documentElement.style.setProperty('--label-text-size', _pc.labelTextSize + 'px');
+    if (_pc.buttonTextSize != null)
+      document.documentElement.style.setProperty('--button-text-size', _pc.buttonTextSize + 'px');
     if (_pc.maxWidth)
       document.querySelector('.widget').style.maxWidth = _pc.maxWidth + 'px';
 
     // Data: questions → topics / teamSizes
+    const questionsEnabled = _pc.questionsEnabled !== false;
     const _choiceQs = (_pc.questions || []).filter(q => q.type === 'choice');
     const topicOptions = _choiceQs[0]
       ? (_choiceQs[0].options || []).map((label, i) => ({ id: 'opt_' + i, label }))
@@ -1002,6 +1155,8 @@
       success: document.getElementById('success'),
       successMeta: document.getElementById('successMeta')
     };
+    const questionPanel = document.querySelector('[data-step="3"]');
+    if (questionPanel && !questionsEnabled) questionPanel.style.display = 'none';
 
     // fixedHolidayDays — defined above from preview config
 
@@ -1396,10 +1551,10 @@
         Контакт: <strong>${contactLine}</strong><br />
         Участники: <strong>${participants}</strong><br />
         Своя ссылка на встречу: <strong>${customMeeting}</strong><br />
-        Что показать на демо: <strong>${topicLabels()}</strong><br />
         Название компании: <strong>${company}</strong><br />
-        Сайт компании: <strong>${site}</strong><br />
-        Размер команды: <strong>${teamSizeLabel()}</strong>
+        Сайт компании: <strong>${site}</strong>${questionsEnabled ? `<br />
+        Что показать на демо: <strong>${topicLabels()}</strong><br />
+        Размер команды: <strong>${teamSizeLabel()}</strong>` : ''}
       `;
     }
 
@@ -1415,6 +1570,10 @@
 
     document.getElementById('toQuestions').addEventListener('click', () => {
       if (!validContacts()) return;
+      if (!questionsEnabled) {
+        showSuccess();
+        return;
+      }
       state.currentStep = 3;
       renderPanels();
     });
