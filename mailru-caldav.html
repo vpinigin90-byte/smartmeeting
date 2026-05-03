@@ -260,14 +260,9 @@
           <label for="password">Пароль приложения</label>
           <input id="password" type="password" autocomplete="current-password" placeholder="Введите пароль приложения" />
         </div>
-        <div class="field hidden" id="calendarWrap">
-          <label for="calendar">Календарь</label>
-          <select id="calendar"></select>
-          <div class="hint">Если у аккаунта несколько календарей, можно выбрать любой из них.</div>
-        </div>
         <div class="button-row">
           <button class="btn-secondary" id="saveBtn" type="button">Сохранить</button>
-          <button class="btn-primary" id="showBtn" type="button">Показать</button>
+          <button class="btn-primary" id="showBtn" type="button">Проверить слоты</button>
         </div>
         <div class="status" id="status">Введите данные и нажмите «Сохранить».</div>
         <div class="hint">
@@ -303,8 +298,6 @@
     const refs = {
       account: document.getElementById('account'),
       password: document.getElementById('password'),
-      calendarWrap: document.getElementById('calendarWrap'),
-      calendar: document.getElementById('calendar'),
       saveBtn: document.getElementById('saveBtn'),
       showBtn: document.getElementById('showBtn'),
       status: document.getElementById('status'),
@@ -314,7 +307,6 @@
     const state = {
       account: '',
       password: '',
-      calendars: [],
       selectedCalendarUrl: '',
       busySlots: []
     };
@@ -394,23 +386,6 @@
       });
     }
 
-    function renderCalendars() {
-      refs.calendar.innerHTML = '';
-      state.calendars.forEach((calendar) => {
-        const option = document.createElement('option');
-        option.value = calendar.url;
-        option.textContent = calendar.name || calendar.url;
-        refs.calendar.appendChild(option);
-      });
-      if (state.selectedCalendarUrl) {
-        refs.calendar.value = state.selectedCalendarUrl;
-      } else if (state.calendars.length) {
-        refs.calendar.value = state.calendars[0].url;
-        state.selectedCalendarUrl = refs.calendar.value;
-      }
-      refs.calendarWrap.classList.toggle('hidden', state.calendars.length <= 1);
-    }
-
     function renderResults() {
       const days = buildDays();
       refs.days.innerHTML = '';
@@ -486,11 +461,9 @@
 
       try {
         const data = await fetchPreview(false);
-        state.calendars = Array.isArray(data.calendars) ? data.calendars : [];
-        state.selectedCalendarUrl = data.calendar?.url || state.selectedCalendarUrl || '';
+        state.selectedCalendarUrl = data.calendar?.url || data.calendars?.[0]?.url || state.selectedCalendarUrl || '';
         saveLocal();
-        renderCalendars();
-        setStatus(`Сохранено. Найдено календарей: ${state.calendars.length}. Нажмите «Показать».`, 'ok');
+        setStatus('Сохранено. Теперь нажмите «Проверить слоты».', 'ok');
       } catch (error) {
         setStatus(error.message || 'Не удалось сохранить подключение.', 'err');
       } finally {
@@ -501,7 +474,6 @@
     async function handleShow() {
       state.account = refs.account.value.trim();
       state.password = refs.password.value.trim();
-      state.selectedCalendarUrl = refs.calendar.value || state.selectedCalendarUrl;
 
       if (!state.account || !state.password) {
         setStatus('Сначала сохраните email и пароль приложения.', 'err');
@@ -513,10 +485,8 @@
 
       try {
         const data = await fetchPreview(true);
-        state.calendars = Array.isArray(data.calendars) ? data.calendars : state.calendars;
         state.selectedCalendarUrl = data.calendar?.url || state.selectedCalendarUrl;
         state.busySlots = Array.isArray(data.busySlots) ? data.busySlots : [];
-        renderCalendars();
         renderResults();
         const calendarName = data.calendar?.name || state.selectedCalendarUrl || 'Mail.ru Calendar';
         setStatus(`Календарь подключён: ${calendarName}. Показаны только реально доступные слоты.`, 'ok');
@@ -527,10 +497,6 @@
       }
     }
 
-    refs.calendar.addEventListener('change', () => {
-      state.selectedCalendarUrl = refs.calendar.value;
-      saveLocal();
-    });
     refs.saveBtn.addEventListener('click', handleSave);
     refs.showBtn.addEventListener('click', handleShow);
     refs.password.addEventListener('keydown', (event) => {
@@ -543,7 +509,7 @@
     loadLocal();
     loadFromQuery();
     if (state.account && state.password) {
-      setStatus('Найдены сохранённые данные. Нажмите «Показать», чтобы обновить слоты.', 'ok');
+      setStatus('Найдены сохранённые данные. Нажмите «Проверить слоты», чтобы обновить доступность.', 'ok');
     }
   </script>
 </body>
