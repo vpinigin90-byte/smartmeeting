@@ -1085,7 +1085,7 @@
       els2.forEach(el => { el.textContent = _q1label; });
     })();
 
-    const timeSlots = (_pc.timeSlots && _pc.timeSlots.length)
+    const globalTimeSlots = (_pc.timeSlots && _pc.timeSlots.length)
       ? _pc.timeSlots
       : ['10:00','10:30','11:00','11:30','12:00','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
     const mailruBusyCache = new Map();
@@ -1096,7 +1096,6 @@
     const defaultMeetingDurationMinutes = Math.max(15, Number(_pc.meetingDurationMinutes || _pc.meetingDuration || _pc.durationMinutes || 60) || 60);
     const bufferMinutes = Math.max(0, Number(_pc.bufferMinutes || 0) || 0);
 
-    const _allowedWeekdays = (_pc.weekdays && _pc.weekdays.length) ? _pc.weekdays : [1,2,3,4,5];
     const _daysAhead = _pc.daysAhead || 7;
 
     const fixedHolidayDays = (_pc.fixedHolidays && _pc.fixedHolidays.length)
@@ -1191,7 +1190,41 @@
       return _observedList.includes(dateId);
     }
 
-    const businessDates = getBusinessDates(_daysAhead);
+    let businessDates = [];
+
+    function getMailruEmployeeSource() {
+      const staff = Array.isArray(_pc.staff) ? _pc.staff : [];
+      if (!staff.length) return null;
+      const explicitId = _pc.mailruEmployeeId || _pc.mailruEmployee?.id || mailruSourceEmployeeId || '';
+      if (explicitId) {
+        const found = staff.find((employee) => employee && employee.id === explicitId);
+        if (found) return found;
+      }
+      const firstConfigured = staff.find((employee) => (
+        employee && ((Array.isArray(employee.weekdays) && employee.weekdays.length) || (Array.isArray(employee.timeSlots) && employee.timeSlots.length))
+      ));
+      return firstConfigured || null;
+    }
+
+    function getAllowedWeekdays() {
+      const source = getMailruEmployeeSource();
+      if (source && Array.isArray(source.weekdays) && source.weekdays.length) {
+        return source.weekdays;
+      }
+      return (_pc.weekdays && _pc.weekdays.length) ? _pc.weekdays : [1,2,3,4,5];
+    }
+
+    function getEffectiveTimeSlots() {
+      const source = getMailruEmployeeSource();
+      if (source && Array.isArray(source.timeSlots) && source.timeSlots.length) {
+        return source.timeSlots;
+      }
+      return globalTimeSlots;
+    }
+
+    function refreshBusinessDates() {
+      businessDates = getBusinessDates(_daysAhead);
+    }
 
     function toDateId(date) {
       const yyyy = date.getFullYear();
@@ -1204,6 +1237,7 @@
       const result = [];
       const now = new Date();
       let plus = 1;
+      const allowedWeekdays = getAllowedWeekdays();
 
       while (result.length < limit) {
         const d = new Date(now);
@@ -1254,7 +1288,7 @@
 
     function availableSlots(dateId) {
       const busySlots = mailruBusyCache.get(dateId) || [];
-      return timeSlots.filter((slot) => !slotOverlapsBusy(dateId, slot, defaultMeetingDurationMinutes, busySlots));
+      return getEffectiveTimeSlots().filter((slot) => !slotOverlapsBusy(dateId, slot, defaultMeetingDurationMinutes, busySlots));
     }
 
     function getMailruSourceEmployeeIdFromResponse(data) {
@@ -1276,6 +1310,9 @@
           if (response.ok) {
             const data = await response.json();
             mailruSourceEmployeeId = getMailruSourceEmployeeIdFromResponse(data);
+            refreshBusinessDates();
+            renderDates();
+            renderTimes();
           }
         } catch {
           // Ignore and fall back to local schedule only.
@@ -1379,7 +1416,7 @@
         renderInlineSummary();
       }
 
-      timeSlots.forEach((slot) => {
+      getEffectiveTimeSlots().forEach((slot) => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'option';
@@ -1740,6 +1777,7 @@
       setError('customMeetingUrl', '');
     });
 
+    refreshBusinessDates();
     renderDates();
     renderTimes();
     toggleSlotNext();
