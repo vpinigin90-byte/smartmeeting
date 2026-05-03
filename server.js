@@ -297,7 +297,7 @@ async function discoverMailruCalendars({ account, password }) {
       const resolvedUrl = toAbsoluteUrl(rootUrl, href);
       if (resolvedUrl === homeUrl || resolvedUrl === principalUrl) continue;
       if (visited.has(resolvedUrl)) continue;
-      if (resolvedUrl !== currentUrl && !isCalendarContainerUrl(resolvedUrl, homeUrl)) {
+      if (resolvedUrl !== currentUrl) {
         queue.push(resolvedUrl);
       }
 
@@ -310,7 +310,7 @@ async function discoverMailruCalendars({ account, password }) {
         /vnd\.caldav/i.test(contentType) ||
         (resourceTypeXml.includes('calendar') && !resourceTypeXml.includes('principal') && !resourceTypeXml.includes('home-set'));
 
-      if (looksLikeCalendar) {
+      if (looksLikeCalendar && !isCalendarContainerUrl(resolvedUrl, homeUrl)) {
         candidates.push({ url: resolvedUrl, name: displayName });
       }
     }
