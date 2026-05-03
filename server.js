@@ -979,6 +979,17 @@ const server = http.createServer(async (req, res) => {
       return await handleApi(req, res, requestUrl);
     }
 
+    if (requestUrl.pathname === '/mailru-caldav' || requestUrl.pathname === '/mailru-caldav.html') {
+      const filePath = path.join(ROOT, 'mailru-caldav.html');
+      try {
+        const data = fs.readFileSync(filePath);
+        send(res, 200, data, 'text/html; charset=utf-8');
+      } catch (error) {
+        send(res, 500, 'Mail.ru CalDAV prototype page is unavailable', 'text/plain; charset=utf-8');
+      }
+      return;
+    }
+
     const filePath = resolveRequestPath(requestUrl.pathname);
     if (!filePath.startsWith(ROOT)) {
       send(res, 403, 'Forbidden', 'text/plain; charset=utf-8');
