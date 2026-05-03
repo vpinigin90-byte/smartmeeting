@@ -242,6 +242,15 @@ function fallbackMailruCalendarName(href) {
   return decoded.charAt(0).toUpperCase() + decoded.slice(1);
 }
 
+function isMailruCalendarContainerUrl(url, homeUrl) {
+  if (!url) return true;
+  const normalized = String(url).split('?')[0].replace(/\/+$/, '');
+  const homeNormalized = String(homeUrl || '').split('?')[0].replace(/\/+$/, '');
+  if (!normalized || normalized === homeNormalized) return true;
+  const lower = normalized.toLowerCase();
+  return lower.endsWith('/calendars') || lower.endsWith('/principals');
+}
+
 function toAbsoluteUrl(base, href) {
   return new URL(href, base).toString();
 }
@@ -536,6 +545,7 @@ async function discoverMailruCalendars({ account, password }) {
       const href = getTagValue(responseXml, 'href');
       if (!href) return null;
       const resolvedUrl = toAbsoluteUrl(rootUrl, href);
+      if (isMailruCalendarContainerUrl(resolvedUrl, homeUrl)) return null;
       const displayName = getTagValue(responseXml, 'displayname') || fallbackMailruCalendarName(href);
       const contentType = (getTagValue(responseXml, 'getcontenttype') || '').toLowerCase();
       const resourceTypeXml = responseXml.toLowerCase();
@@ -559,7 +569,7 @@ async function discoverMailruCalendars({ account, password }) {
           const href = getTagValue(responseXml, 'href');
           if (!href) return null;
           const resolvedUrl = toAbsoluteUrl(rootUrl, href);
-          if (resolvedUrl === homeUrl) return null;
+          if (isMailruCalendarContainerUrl(resolvedUrl, homeUrl)) return null;
           const displayName = getTagValue(responseXml, 'displayname') || fallbackMailruCalendarName(href);
           return {
             url: resolvedUrl,
