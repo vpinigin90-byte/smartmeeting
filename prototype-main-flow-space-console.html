@@ -1103,7 +1103,6 @@
     let mailruIntegrationLoaded = false;
     let mailruAvailabilityLoading = false;
     let mailruAvailabilityToken = 0;
-    const defaultMeetingDurationMinutes = Math.max(15, Number(_pc.meetingDurationMinutes || _pc.meetingDuration || _pc.durationMinutes || 60) || 60);
     const daysAheadRaw = Number(_pc.daysAhead);
     const _daysAhead = Number.isFinite(daysAheadRaw) && daysAheadRaw > 0 ? daysAheadRaw : 7;
     // Contact fields config
@@ -1240,23 +1239,18 @@
       return new Date(`${dateId}T${slot}:00`);
     }
 
-    function getSlotEnd(dateId, slot, durationMinutes = defaultMeetingDurationMinutes) {
-      return new Date(getSlotStart(dateId, slot).getTime() + durationMinutes * 60000);
-    }
-
-    function slotOverlapsBusy(dateId, slot, durationMinutes, busySlots) {
+    function slotOverlapsBusy(dateId, slot, busySlots) {
       const slotStart = getSlotStart(dateId, slot).getTime();
-      const slotEnd = getSlotEnd(dateId, slot, durationMinutes).getTime();
       return (busySlots || []).some((busy) => {
         const busyStart = new Date(busy.start).getTime();
         const busyEnd = new Date(busy.end).getTime();
-        return Number.isFinite(busyStart) && Number.isFinite(busyEnd) && busyStart < slotEnd && busyEnd > slotStart;
+        return Number.isFinite(busyStart) && Number.isFinite(busyEnd) && busyStart <= slotStart && busyEnd > slotStart;
       });
     }
 
     function availableSlots(dateId) {
       const busySlots = mailruBusyCache.get(dateId) || [];
-      return globalTimeSlots.filter((slot) => !slotOverlapsBusy(dateId, slot, defaultMeetingDurationMinutes, busySlots));
+      return globalTimeSlots.filter((slot) => !slotOverlapsBusy(dateId, slot, busySlots));
     }
 
     async function ensureMailruAvailability(dateId) {
@@ -1371,7 +1365,7 @@
       const allowed = availableSlots(state.selectedDate);
       const busySlots = mailruBusyCache.get(state.selectedDate) || [];
       const selectedSlotBusy = state.selectedTime
-        ? slotOverlapsBusy(state.selectedDate, state.selectedTime, defaultMeetingDurationMinutes, busySlots)
+        ? slotOverlapsBusy(state.selectedDate, state.selectedTime, busySlots)
         : false;
       const selectedSlotAllowed = state.selectedTime ? allowed.includes(state.selectedTime) : false;
       if (state.selectedTime && (!selectedSlotAllowed || selectedSlotBusy)) {
@@ -1393,7 +1387,7 @@
         btn.type = 'button';
         btn.className = 'option';
         const isAllowed = allowed.includes(slot);
-        const isBusy = slotOverlapsBusy(state.selectedDate, slot, defaultMeetingDurationMinutes, busySlots);
+        const isBusy = slotOverlapsBusy(state.selectedDate, slot, busySlots);
 
         if (!isAllowed || isBusy) {
           btn.classList.add('disabled');
