@@ -3343,6 +3343,9 @@
               <button class="btn-copy" data-copy-target="iframeCodeBlock">Копировать</button>
             </div>
           </div>
+          <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap">
+            <button class="btn-save accent" id="refreshExportBtn" data-i18n="action_refresh_export" style="white-space:nowrap">Обновить экспорт виджета</button>
+          </div>
         </div>
 
         <div class="export-panel" id="exportPanelScript">
@@ -3873,6 +3876,7 @@ const TRANSLATIONS = {
     nav_team: 'Команда',
     nav_integrations: 'Интеграции',
     action_export_widget: 'Экспорт виджета',
+    action_refresh_export: 'Обновить экспорт виджета',
     action_add_widget: '+ Добавить виджет',
     settings_theme_title: 'Тема интерфейса',
     settings_language_title: 'Язык интерфейса',
@@ -3914,6 +3918,7 @@ const TRANSLATIONS = {
     nav_team: 'Team',
     nav_integrations: 'Integrations',
     action_export_widget: 'Export widget',
+    action_refresh_export: 'Refresh widget export',
     action_add_widget: '+ Add widget',
     settings_theme_title: 'Interface theme',
     settings_language_title: 'Interface language',
@@ -4067,6 +4072,11 @@ async function syncWidgetsToServer() {
   } catch (error) {
     // Keep local cache as a fallback; server sync will retry on the next save.
   }
+}
+
+async function flushCurrentWidgetToServer() {
+  saveCfg();
+  await syncWidgetsToServer();
 }
 
 async function hydrateWidgetsFromServer() {
@@ -6250,19 +6260,21 @@ document.getElementById('copyShareLinkBtn').addEventListener('click', () => {
 });
 
 // ═══════════════ PREVIEW ═══════════════
-document.getElementById('previewBtn').addEventListener('click', () => {
+document.getElementById('previewBtn').addEventListener('click', async () => {
   if (document.getElementById('previewBtn').disabled) return;
   ['general','schedule','contacts','routing','questions','holidays','appearance','mts','telegram','calendar'].forEach(s => collectSection(s));
+  localStorage.setItem('smm_preview_cfg', JSON.stringify(cfg));
+  if (currentWidgetId) localStorage.setItem('smm_active_widget_id', currentWidgetId);
+  await flushCurrentWidgetToServer();
   const url = buildWidgetUrl(cfg, currentWidgetId);
   window.open(url, '_blank', 'noopener,noreferrer');
 });
 
 // ═══════════════ PREVIEW READY ═══════════════
 function checkPreviewReady() {
-  const exported = isWidgetExported(getCurrentWidget());
   const generateBtn = document.getElementById('generateCodeBtn');
   const settingsOk = generateBtn && !generateBtn.disabled;
-  const ready = settingsOk && exported;
+  const ready = settingsOk && Boolean(currentWidgetId || getCurrentWidget());
   const previewBtn = document.getElementById('previewBtn');
   const previewBtnEmbed = document.getElementById('previewBtnEmbed');
   if (previewBtn) previewBtn.disabled = !ready;
@@ -6354,9 +6366,24 @@ document.getElementById('generateCodeBtn').addEventListener('click', () => {
   toast('Виджет экспортирован ✓');
 });
 
-document.getElementById('previewBtnEmbed').addEventListener('click', () => {
+document.getElementById('refreshExportBtn').addEventListener('click', async () => {
+  if (document.getElementById('generateCodeBtn').disabled) return;
+  ['general','schedule','contacts','routing','questions','holidays','appearance','mts','telegram','calendar'].forEach(s => collectSection(s));
+  localStorage.setItem('smm_preview_cfg', JSON.stringify(cfg));
+  if (currentWidgetId) localStorage.setItem('smm_active_widget_id', currentWidgetId);
+  await flushCurrentWidgetToServer();
+  markCurrentWidgetExported();
+  checkPreviewReady();
+  renderEmbedCode();
+  toast('Экспорт виджета обновлён ✓');
+});
+
+document.getElementById('previewBtnEmbed').addEventListener('click', async () => {
   if (document.getElementById('previewBtnEmbed').disabled) return;
   ['general','schedule','contacts','routing','questions','holidays','appearance','mts','telegram','calendar'].forEach(s => collectSection(s));
+  localStorage.setItem('smm_preview_cfg', JSON.stringify(cfg));
+  if (currentWidgetId) localStorage.setItem('smm_active_widget_id', currentWidgetId);
+  await flushCurrentWidgetToServer();
   const url = buildWidgetUrl(cfg, currentWidgetId);
   window.open(url, '_blank', 'noopener,noreferrer');
 });
