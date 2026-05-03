@@ -900,6 +900,19 @@ async function handleApi(req, res, requestUrl) {
     }
   }
 
+  if (req.method === 'GET' && (
+    requestUrl.pathname === '/health' ||
+    requestUrl.pathname === '/healthz' ||
+    requestUrl.pathname === '/api/health' ||
+    requestUrl.pathname === '/api/healthz'
+  )) {
+    return sendJson(res, 200, {
+      ok: true,
+      status: 'healthy',
+      timestamp: new Date().toISOString()
+    });
+  }
+
   return sendError(res, 404, 'API endpoint not found');
 }
 
