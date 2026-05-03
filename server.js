@@ -164,6 +164,12 @@ function getTagValue(xml, tagName) {
   return selfClosing ? '' : '';
 }
 
+function getTagValueWithin(xml, sectionTag, childTag) {
+  const sectionMatch = xml.match(new RegExp(`<(?:[a-z0-9_-]+:)?${sectionTag}(?:\\s[^>]*)?>([\\s\\S]*?)</(?:[a-z0-9_-]+:)?${sectionTag}>`, 'i'));
+  if (!sectionMatch) return '';
+  return getTagValue(sectionMatch[1], childTag);
+}
+
 function getTagValues(xml, tagName) {
   const values = [];
   const regex = new RegExp(`<(?:[a-z0-9_-]+:)?${tagName}(?:\\s[^>]*)?>([\\s\\S]*?)</(?:[a-z0-9_-]+:)?${tagName}>`, 'ig');
@@ -234,7 +240,7 @@ async function discoverMailruCalendars({ account, password }) {
 </d:propfind>`
   });
 
-  const principalPath = getTagValue(principalResponse.text, 'href');
+  const principalPath = getTagValueWithin(principalResponse.text, 'current-user-principal', 'href') || getTagValue(principalResponse.text, 'href');
   const principalUrl = principalPath ? toAbsoluteUrl(rootUrl, principalPath) : `${rootUrl}principals/users/${encodeURIComponent(account)}/`;
 
   const homeResponse = await caldavRequest({
@@ -254,7 +260,7 @@ async function discoverMailruCalendars({ account, password }) {
 </d:propfind>`
   });
 
-  const homePath = getTagValue(homeResponse.text, 'href');
+  const homePath = getTagValueWithin(homeResponse.text, 'calendar-home-set', 'href') || getTagValue(homeResponse.text, 'href');
   const homeUrl = homePath ? toAbsoluteUrl(rootUrl, homePath) : `${rootUrl}calendars/${encodeURIComponent(account)}/`;
 
   const candidates = [];
@@ -289,7 +295,10 @@ async function discoverMailruCalendars({ account, password }) {
       const href = getTagValue(responseXml, 'href');
       if (!href) continue;
       const resolvedUrl = toAbsoluteUrl(rootUrl, href);
-      if (visited.has(resolvedUrl) || isCalendarContainerUrl(resolvedUrl, homeUrl)) continue;
+      if (visited.has(resolvedUrl)) continue;
+      if (resolvedUrl !== currentUrl && !isCalendarContainerUrl(resolvedUrl, homeUrl)) {
+        queue.push(resolvedUrl);
+      }
 
       const displayName = getTagValue(responseXml, 'displayname') || fallbackMailruCalendarName(href);
       const contentType = (getTagValue(responseXml, 'getcontenttype') || '').toLowerCase();
@@ -302,8 +311,6 @@ async function discoverMailruCalendars({ account, password }) {
 
       if (looksLikeCalendar) {
         candidates.push({ url: resolvedUrl, name: displayName });
-      } else if (/calendar/i.test(displayName) || /calendar/i.test(resolvedUrl)) {
-        queue.push(resolvedUrl);
       }
     }
   }
