@@ -3572,6 +3572,12 @@ function saveCfg() {
   if (!currentWidgetId) return;
   const idx = widgets.findIndex(w => w.id === currentWidgetId);
   if (idx < 0) return;
+  const primaryMailruEmployeeId = getPrimaryMailruEmployeeId();
+  if (primaryMailruEmployeeId) {
+    cfg.mailruEmployeeId = primaryMailruEmployeeId;
+  } else if (!mailruIntegrationState.enabled) {
+    delete cfg.mailruEmployeeId;
+  }
   widgets[idx].config = deepClone(cfg);
   const nameField = document.getElementById('cfgWidgetName');
   if (nameField && nameField.value.trim()) widgets[idx].name = nameField.value.trim();
@@ -3668,6 +3674,16 @@ function hasActiveMailruEmployees() {
     Boolean(employeeState.hasPassword) &&
     Boolean(employeeState.selectedCalendarUrl)
   ));
+}
+
+function getPrimaryMailruEmployeeId() {
+  const employees = mailruIntegrationState.employees || {};
+  const configured = Object.entries(employees).filter(([, employeeState]) => (
+    Boolean(employeeState.account) &&
+    Boolean(employeeState.hasPassword) &&
+    Boolean(employeeState.selectedCalendarUrl)
+  ));
+  return configured.length === 1 ? configured[0][0] : '';
 }
 
 function populateMailruIntegration() {
@@ -5663,6 +5679,12 @@ document.getElementById('generateEmbedBtn').addEventListener('click', () => {
 });
 
 function renderEmbedCode() {
+  const primaryMailruEmployeeId = getPrimaryMailruEmployeeId();
+  if (primaryMailruEmployeeId) {
+    cfg.mailruEmployeeId = primaryMailruEmployeeId;
+  } else if (!mailruIntegrationState.enabled) {
+    delete cfg.mailruEmployeeId;
+  }
   const width  = (document.getElementById('embedWidth')?.value  || '100%').trim();
   const height = parseInt(document.getElementById('embedHeight')?.value) || 750;
   const baseUrl = getWidgetPageUrl();
