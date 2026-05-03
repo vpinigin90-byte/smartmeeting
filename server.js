@@ -295,6 +295,7 @@ async function discoverMailruCalendars({ account, password }) {
       const href = getTagValue(responseXml, 'href');
       if (!href) continue;
       const resolvedUrl = toAbsoluteUrl(rootUrl, href);
+      if (resolvedUrl === homeUrl || resolvedUrl === principalUrl) continue;
       if (visited.has(resolvedUrl)) continue;
       if (resolvedUrl !== currentUrl && !isCalendarContainerUrl(resolvedUrl, homeUrl)) {
         queue.push(resolvedUrl);
@@ -392,10 +393,14 @@ async function handleApi(req, res, requestUrl) {
       }
 
       const discovery = await discoverMailruCalendars({ account, password });
-      const selectedCalendarUrl = String(body.calendarUrl || '').trim() || (discovery.calendars[0] && discovery.calendars[0].url) || '';
-      const selectedCalendar = discovery.calendars.find((calendar) => calendar.url === selectedCalendarUrl) || discovery.calendars[0] || null;
+      const candidateUrls = Array.from(new Set([
+        String(body.calendarUrl || '').trim(),
+        ...discovery.calendars.map((calendar) => calendar.url)
+      ].filter(Boolean)));
+      let selectedCalendar = null;
+      let selectedCalendarUrl = '';
 
-      if (!selectedCalendarUrl) {
+      if (!candidateUrls.length) {
         return sendError(res, 400, 'У аккаунта Mail.ru не найдено ни одного доступного календаря');
       }
 
@@ -404,6 +409,8 @@ async function handleApi(req, res, requestUrl) {
       const hasRange = from instanceof Date && !Number.isNaN(from) && to instanceof Date && !Number.isNaN(to) && to > from;
 
       if (!hasRange) {
+        selectedCalendarUrl = candidateUrls[0];
+        selectedCalendar = discovery.calendars.find((calendar) => calendar.url === selectedCalendarUrl) || discovery.calendars[0] || null;
         return sendJson(res, 200, {
           ok: true,
           account,
@@ -414,13 +421,32 @@ async function handleApi(req, res, requestUrl) {
         });
       }
 
-      const busySlots = await queryCalendarBusyEvents({
-        account,
-        password,
-        calendarUrl: selectedCalendarUrl,
-        from,
-        to
-      });
+      let busySlots = [];
+      let lastError = null;
+      for (const calendarUrl of candidateUrls) {
+        try {
+          busySlots = await queryCalendarBusyEvents({
+            account,
+            password,
+            calendarUrl,
+            from,
+            to
+          });
+          selectedCalendarUrl = calendarUrl;
+          selectedCalendar = discovery.calendars.find((calendar) => calendar.url === calendarUrl) || { url: calendarUrl, name: fallbackMailruCalendarName(calendarUrl) };
+          lastError = null;
+          break;
+        } catch (error) {
+          lastError = error;
+          if (error.statusCode !== 404) {
+            throw error;
+          }
+        }
+      }
+
+      if (!selectedCalendarUrl) {
+        throw lastError || new Error('Mail.ru CalDAV не вернул доступный календарь');
+      }
 
       return sendJson(res, 200, {
         ok: true,
