@@ -1089,15 +1089,19 @@
       ? _pc.timeSlots
       : ['10:00','10:30','11:00','11:30','12:00','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
     const staffMembers = Array.isArray(_pc.staff) ? _pc.staff.filter(Boolean) : [];
+    const mandatoryMembers = Array.isArray(_pc.mandatoryParticipants) ? _pc.mandatoryParticipants.filter(Boolean) : [];
+    const allMembers = [...staffMembers, ...mandatoryMembers];
     const mailruBusyCache = new Map();
     let mailruIntegrationSnapshot = null;
     let mailruIntegrationLoaded = false;
     let mailruAvailabilityLoading = false;
     let mailruAvailabilityToken = 0;
     const defaultMeetingDurationMinutes = Math.max(15, Number(_pc.meetingDurationMinutes || _pc.meetingDuration || _pc.durationMinutes || 60) || 60);
-    const bufferMinutes = Math.max(0, Number(_pc.bufferMinutes || 0) || 0);
+    const bufferMinutesRaw = Number(_pc.bufferMinutes);
+    const bufferMinutes = Number.isFinite(bufferMinutesRaw) && bufferMinutesRaw >= 0 ? bufferMinutesRaw : 30;
 
-    const _daysAhead = _pc.daysAhead || 7;
+    const daysAheadRaw = Number(_pc.daysAhead);
+    const _daysAhead = Number.isFinite(daysAheadRaw) && daysAheadRaw > 0 ? daysAheadRaw : 7;
 
     const fixedHolidayDays = (_pc.fixedHolidays && _pc.fixedHolidays.length)
       ? _pc.fixedHolidays
@@ -1216,18 +1220,18 @@
 
     function getCombinedWeekdays() {
       const base = getDefaultWeekdays();
-      if (!staffMembers.length) return base;
-      return staffMembers.reduce((acc, employee) => intersectArrays(acc, getEmployeeWeekdays(employee)), base);
+      if (!allMembers.length) return base;
+      return allMembers.reduce((acc, employee) => intersectArrays(acc, getEmployeeWeekdays(employee)), base);
     }
 
     function getCombinedTimeSlots() {
-      if (!staffMembers.length) return globalTimeSlots;
-      return staffMembers.reduce((acc, employee) => intersectArrays(acc, getEmployeeTimeSlots(employee)), globalTimeSlots);
+      if (!allMembers.length) return globalTimeSlots;
+      return allMembers.reduce((acc, employee) => intersectArrays(acc, getEmployeeTimeSlots(employee)), globalTimeSlots);
     }
 
     function getMailruCalendarEmployees() {
       const snapshotEmployees = mailruIntegrationSnapshot?.employees || {};
-      return staffMembers.filter((employee) => {
+      return allMembers.filter((employee) => {
         if (!employee || !employee.id) return false;
         const mailruState = snapshotEmployees[employee.id];
         return Boolean(mailruState && mailruState.account && mailruState.hasPassword && mailruState.selectedCalendarUrl);
