@@ -1076,6 +1076,7 @@
     let mailruAvailabilityLoading = false;
     let mailruAvailabilityToken = 0;
     const defaultMeetingDurationMinutes = Math.max(15, Number(_pc.meetingDurationMinutes || _pc.meetingDuration || _pc.durationMinutes || 60) || 60);
+    const bufferMinutes = Math.max(0, Number(_pc.bufferMinutes || 0) || 0);
 
     const _allowedWeekdays = (_pc.weekdays && _pc.weekdays.length) ? _pc.weekdays : [1,2,3,4,5];
     const _daysAhead = _pc.daysAhead || 7;
@@ -1086,7 +1087,7 @@
 
     const _observedList = (_pc.observedHolidays && _pc.observedHolidays.length)
       ? _pc.observedHolidays
-      : ['2026-03-09','2026-05-11'];
+      : ['2026-01-09','2026-03-09','2026-05-11','2026-12-31'];
     // Contact fields config
     const _contactFields = _pc.contactFields || [];
     function _cfFind(id) { return _contactFields.find(f => f.id === id); }
@@ -1227,16 +1228,15 @@
       const slotStart = getSlotStart(dateId, slot).getTime();
       const slotEnd = getSlotEnd(dateId, slot, durationMinutes).getTime();
       return (busySlots || []).some((busy) => {
-        const busyStart = new Date(busy.start).getTime();
-        const busyEnd = new Date(busy.end).getTime();
+        const busyStart = new Date(busy.start).getTime() - (bufferMinutes * 60000);
+        const busyEnd = new Date(busy.end).getTime() + (bufferMinutes * 60000);
         return Number.isFinite(busyStart) && Number.isFinite(busyEnd) && busyStart < slotEnd && busyEnd > slotStart;
       });
     }
 
     function availableSlots(dateId) {
-      const idx = businessDates.findIndex((d) => d.id === dateId);
       const busySlots = mailruBusyCache.get(dateId) || [];
-      return timeSlots.filter((slot, i) => (i + idx) % 4 !== 0 && !slotOverlapsBusy(dateId, slot, defaultMeetingDurationMinutes, busySlots));
+      return timeSlots.filter((slot) => !slotOverlapsBusy(dateId, slot, defaultMeetingDurationMinutes, busySlots));
     }
 
     function getMailruSourceEmployeeIdFromResponse(data) {
