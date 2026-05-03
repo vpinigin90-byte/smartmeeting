@@ -184,6 +184,16 @@ function getResponses(xml) {
   return (String(xml || '').match(/<[^:>]*:?response[\s\S]*?<\/[^:>]*:?response>/gi) || []);
 }
 
+function extractHrefs(xml) {
+  const values = [];
+  const regex = /<(?:[a-z0-9_-]+:)?href>([\s\S]*?)<\/(?:[a-z0-9_-]+:)?href>/ig;
+  let match;
+  while ((match = regex.exec(String(xml || '')))) {
+    values.push(match[1].trim());
+  }
+  return values;
+}
+
 function isCalendarContainerUrl(url, homeUrl) {
   if (!url) return true;
   const normalized = String(url).split('?')[0].replace(/\/+$/, '');
@@ -291,7 +301,10 @@ async function discoverMailruCalendars({ account, password }) {
 </d:propfind>`
     });
 
-    for (const responseXml of getResponses(calendarsResponse.text)) {
+    const responseTexts = getResponses(calendarsResponse.text);
+    const hrefs = extractHrefs(calendarsResponse.text);
+
+    for (const responseXml of responseTexts) {
       const href = getTagValue(responseXml, 'href');
       if (!href) continue;
       const resolvedUrl = toAbsoluteUrl(rootUrl, href);
@@ -312,6 +325,17 @@ async function discoverMailruCalendars({ account, password }) {
 
       if (looksLikeCalendar && !isCalendarContainerUrl(resolvedUrl, homeUrl)) {
         candidates.push({ url: resolvedUrl, name: displayName });
+      }
+    }
+
+    for (const href of hrefs) {
+      const resolvedUrl = toAbsoluteUrl(rootUrl, href);
+      if (!resolvedUrl || resolvedUrl === homeUrl || resolvedUrl === principalUrl || visited.has(resolvedUrl)) continue;
+      if (resolvedUrl !== currentUrl) {
+        queue.push(resolvedUrl);
+      }
+      if (/calendar/i.test(resolvedUrl) && !isCalendarContainerUrl(resolvedUrl, homeUrl)) {
+        candidates.push({ url: resolvedUrl, name: fallbackMailruCalendarName(href) });
       }
     }
   }
