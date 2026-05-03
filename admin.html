@@ -1253,6 +1253,8 @@
     }
 
     .preview-btn:hover { border-color: var(--border-2); color: var(--text); }
+    .preview-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .preview-btn:disabled:hover { border-color: var(--border); color: var(--muted); }
 
     /* ── Toast ── */
     .toast {
@@ -2779,11 +2781,6 @@
           <svg viewBox="0 0 24 24"><path d="M9 3v5"></path><path d="M15 3v5"></path><path d="M8 8h8v3a4 4 0 0 1-8 0Z"></path><path d="M12 15v6"></path></svg>
         </span> <span data-i18n="nav_integrations">Интеграции</span>
       </button>
-      <button class="sb-item" data-section="widget">
-        <span class="icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M1.5 12s3.8-6 10.5-6 10.5 6 10.5 6-3.8 6-10.5 6S1.5 12 1.5 12Z"></path><circle cx="12" cy="12" r="3.2"></circle></svg>
-        </span> <span>Виджет</span>
-      </button>
       <div class="sb-divider"></div>
       <div class="sb-generate-wrap">
         <button class="btn-generate" id="generateCodeBtn" disabled>
@@ -2826,7 +2823,7 @@
           <input type="text" id="cfgWidgetName" class="widget-name-field" placeholder="Название виджета" />
           <p style="margin-top:4px;font-size:13px;color:var(--muted)">Настройки виджета</p>
         </div>
-        <button class="preview-btn" id="previewBtn" style="margin-left:16px">
+        <button class="preview-btn" id="previewBtn" style="margin-left:16px" disabled>
           <svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;display:block"><path d="M1.5 12s3.8-6 10.5-6 10.5 6 10.5 6-3.8 6-10.5 6S1.5 12 1.5 12Z"></path><circle cx="12" cy="12" r="3.2"></circle></svg>
           <span>Предпросмотр</span>
         </button>
@@ -3313,7 +3310,7 @@
           <h2 data-i18n="export_title">Экспорт виджета</h2>
           <p data-i18n="export_sub">Выберите формат публикации: iFrame, код для сайта или ссылка</p>
         </div>
-        <button class="preview-btn" id="previewBtnEmbed">
+        <button class="preview-btn" id="previewBtnEmbed" disabled>
           <svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;display:block"><path d="M1.5 12s3.8-6 10.5-6 10.5 6 10.5 6-3.8 6-10.5 6S1.5 12 1.5 12Z"></path><circle cx="12" cy="12" r="3.2"></circle></svg>
           <span>Предпросмотр</span>
         </button>
@@ -6254,15 +6251,23 @@ document.getElementById('copyShareLinkBtn').addEventListener('click', () => {
 
 // ═══════════════ PREVIEW ═══════════════
 document.getElementById('previewBtn').addEventListener('click', () => {
+  if (document.getElementById('previewBtn').disabled) return;
   ['general','schedule','contacts','routing','questions','holidays','appearance','mts','telegram','calendar'].forEach(s => collectSection(s));
-  // Переключаемся на секцию виджета
-  document.querySelectorAll('#editorNav .sb-item').forEach(i => i.classList.remove('active'));
-  const wdgNavBtn = document.querySelector('#editorNav .sb-item[data-section="widget"]');
-  if (wdgNavBtn) wdgNavBtn.classList.add('active');
-  Object.values(SEC_MAP).forEach(id => document.getElementById(id)?.classList.remove('active'));
-  document.getElementById('secWidget').classList.add('active');
-  wgtInitPreview();
+  const url = buildWidgetUrl(cfg, currentWidgetId);
+  window.open(url, '_blank', 'noopener,noreferrer');
 });
+
+// ═══════════════ PREVIEW READY ═══════════════
+function checkPreviewReady() {
+  const exported = isWidgetExported(getCurrentWidget());
+  const generateBtn = document.getElementById('generateCodeBtn');
+  const settingsOk = generateBtn && !generateBtn.disabled;
+  const ready = settingsOk && exported;
+  const previewBtn = document.getElementById('previewBtn');
+  const previewBtnEmbed = document.getElementById('previewBtnEmbed');
+  if (previewBtn) previewBtn.disabled = !ready;
+  if (previewBtnEmbed) previewBtnEmbed.disabled = !ready;
+}
 
 // ═══════════════ GENERATE CODE ═══════════════
 function checkGenerateReady() {
@@ -6295,6 +6300,7 @@ function checkGenerateReady() {
       ? t('generate_hint_prefix') + issues.join(', ')
       : t('generate_hint_ready');
   }
+  checkPreviewReady();
 }
 
 function buildWidgetUrl(config, widgetId = currentWidgetId) {
@@ -6338,6 +6344,7 @@ document.getElementById('generateCodeBtn').addEventListener('click', () => {
   ['general','schedule','contacts','routing','questions','holidays','appearance','mts','telegram','calendar'].forEach(s => collectSection(s));
   saveCfg();
   markCurrentWidgetExported();
+  checkPreviewReady();
   renderEmbedCode();
   setActiveExportMode('iframe');
   // Показываем secEmbed, снимаем активный класс с пунктов меню
@@ -6348,13 +6355,10 @@ document.getElementById('generateCodeBtn').addEventListener('click', () => {
 });
 
 document.getElementById('previewBtnEmbed').addEventListener('click', () => {
+  if (document.getElementById('previewBtnEmbed').disabled) return;
   ['general','schedule','contacts','routing','questions','holidays','appearance','mts','telegram','calendar'].forEach(s => collectSection(s));
-  document.querySelectorAll('#editorNav .sb-item').forEach(i => i.classList.remove('active'));
-  const wdgNavBtn = document.querySelector('#editorNav .sb-item[data-section="widget"]');
-  if (wdgNavBtn) wdgNavBtn.classList.add('active');
-  Object.values(SEC_MAP).forEach(id => document.getElementById(id)?.classList.remove('active'));
-  document.getElementById('secWidget').classList.add('active');
-  wgtInitPreview();
+  const url = buildWidgetUrl(cfg, currentWidgetId);
+  window.open(url, '_blank', 'noopener,noreferrer');
 });
 
 // ═══════════════ LINK/CODE MODAL ═══════════════
@@ -6714,8 +6718,10 @@ function wgtCombinedSlots() {
 
 function wgtMailruEmployees() {
   const staff = Array.isArray(cfg.staff) ? cfg.staff.filter(Boolean) : [];
-  const snap  = wgtMailruSnapshot?.employees || {};
-  return staff.filter(emp => {
+  const mandatory = Array.isArray(cfg.mandatoryParticipants) ? cfg.mandatoryParticipants.filter(Boolean) : [];
+  const allMembers = [...staff, ...mandatory];
+  const snap = wgtMailruSnapshot?.employees || {};
+  return allMembers.filter(emp => {
     if (!emp || !emp.id) return false;
     const ms = snap[emp.id];
     return Boolean(ms && ms.account && ms.hasPassword && ms.selectedCalendarUrl);
@@ -7203,16 +7209,6 @@ function wgtInitPreview() {
     });
   }
 }
-
-// Автоматически инициализируем виджет при переходе на секцию
-document.querySelectorAll('#editorNav .sb-item[data-section]').forEach(item => {
-  if (item.dataset.section === 'widget') {
-    item.addEventListener('click', () => {
-      ['general','schedule','contacts','routing','questions','holidays','appearance','mts','telegram','calendar'].forEach(s => collectSection(s));
-      wgtInitPreview();
-    });
-  }
-});
 
 // ═══════════════ INIT ═══════════════
 initLanguage();
