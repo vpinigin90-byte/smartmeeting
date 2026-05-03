@@ -6,8 +6,10 @@ const crypto = require('crypto');
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
-const DATA_DIR = path.join(ROOT, 'data');
+const DATA_DIR = process.env.DATA_DIR || (fs.existsSync('/data') ? '/data' : path.join(ROOT, 'data'));
+const LEGACY_DATA_DIR = path.join(ROOT, 'data');
 const MAILRU_CONFIG_PATH = path.join(DATA_DIR, 'mailru-calendar-integration.json');
+const LEGACY_MAILRU_CONFIG_PATH = path.join(LEGACY_DATA_DIR, 'mailru-calendar-integration.json');
 const CONFIG_SECRET = process.env.MAILRU_CONFIG_SECRET || process.env.APP_SECRET || '';
 
 const MIME_TYPES = {
@@ -99,18 +101,34 @@ function decryptSecret(value) {
 }
 
 function loadMailruConfig() {
+  const candidates = [MAILRU_CONFIG_PATH, LEGACY_MAILRU_CONFIG_PATH].filter((value, index, self) => self.indexOf(value) === index);
+  for (const candidate of candidates) {
+    try {
+      const raw = fs.readFileSync(candidate, 'utf8');
+      const parsed = JSON.parse(raw);
+      const normalized = {
+        ...MAILRU_DEFAULT_CONFIG,
+        ...parsed,
+        employees: parsed.employees && typeof parsed.employees === 'object'
+          ? parsed.employees
+          : parsed.employeeBindings && typeof parsed.employeeBindings === 'object'
+            ? parsed.employeeBindings
+            : {}
+      };
+      if (candidate !== MAILRU_CONFIG_PATH) {
+        try {
+          saveMailruConfig(normalized);
+        } catch (migrationError) {
+          // Ignore migration failures and keep the legacy read path working.
+        }
+      }
+      return normalized;
+    } catch (error) {
+      // Try the next candidate path.
+    }
+  }
   try {
-    const raw = fs.readFileSync(MAILRU_CONFIG_PATH, 'utf8');
-    const parsed = JSON.parse(raw);
-    return {
-      ...MAILRU_DEFAULT_CONFIG,
-      ...parsed,
-      employees: parsed.employees && typeof parsed.employees === 'object'
-        ? parsed.employees
-        : parsed.employeeBindings && typeof parsed.employeeBindings === 'object'
-          ? parsed.employeeBindings
-          : {}
-    };
+    return { ...MAILRU_DEFAULT_CONFIG };
   } catch (error) {
     return { ...MAILRU_DEFAULT_CONFIG };
   }
