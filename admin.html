@@ -3533,7 +3533,10 @@ function saveSession(u) { localStorage.setItem('smm_session', JSON.stringify(u))
 function clearSession() { localStorage.removeItem('smm_session'); }
 function loadSession() { try { return JSON.parse(localStorage.getItem('smm_session')); } catch { return null; } }
 function getWidgets() { try { return JSON.parse(localStorage.getItem('smm_widgets') || '[]'); } catch { return []; } }
-function saveWidgets() { localStorage.setItem('smm_widgets', JSON.stringify(widgets)); }
+function saveWidgets() {
+  localStorage.setItem('smm_widgets', JSON.stringify(widgets));
+  void syncWidgetsToServer();
+}
 function getCurrentWidget() {
   return currentWidgetId ? widgets.find(w => w.id === currentWidgetId) || null : null;
 }
@@ -3584,6 +3587,34 @@ function saveCfg() {
   widgets[idx].exportedAt = null;
   saveWidgets();
   checkGenerateReady();
+}
+
+async function syncWidgetsToServer() {
+  try {
+    await apiRequest('/api/widgets', {
+      method: 'POST',
+      body: JSON.stringify({ widgets })
+    });
+  } catch (error) {
+    // Keep local cache as a fallback; server sync will retry on the next save.
+  }
+}
+
+async function hydrateWidgetsFromServer() {
+  try {
+    const data = await apiRequest('/api/widgets', { method: 'GET' });
+    if (!data?.ok || !Array.isArray(data.widgets)) return;
+    widgets = data.widgets;
+    localStorage.setItem('smm_widgets', JSON.stringify(widgets));
+    const activeExists = currentWidgetId && widgets.some(w => w && w.id === currentWidgetId);
+    if (currentWidgetId && !activeExists) {
+      currentWidgetId = null;
+      localStorage.removeItem('smm_active_widget_id');
+    }
+    if (document.getElementById('widgetsList')) renderWidgetsList();
+  } catch (error) {
+    // Silently keep localStorage data if server is not reachable yet.
+  }
 }
 
 // ═══════════════ THEME ═══════════════
@@ -3896,6 +3927,7 @@ function enterApp(user) {
   document.getElementById('sbUserName').textContent = user.name;
   document.getElementById('sbUserEmail').textContent = user.email;
   enterDashboard();
+  void hydrateWidgetsFromServer();
 }
 
 // ═══════════════ DASH SETTINGS TOGGLE ═══════════════
@@ -5688,8 +5720,9 @@ function renderEmbedCode() {
   const width  = (document.getElementById('embedWidth')?.value  || '100%').trim();
   const height = parseInt(document.getElementById('embedHeight')?.value) || 750;
   const baseUrl = getWidgetPageUrl();
+  const widgetId = currentWidgetId || getCurrentWidget()?.id || '';
 
-  const iframeCode = buildWidgetIframe(cfg, width, height);
+  const iframeCode = buildWidgetIframe(cfg, width, height, widgetId);
   const scriptCode =
 `<!-- sMartMeeting Widget -->
 <div id="smartmeeting-root"></div>
@@ -5699,7 +5732,7 @@ window.sMartMeetingConfig = ${JSON.stringify(cfg, null, 2)};
   var root = document.getElementById('smartmeeting-root');
   if (!root) return;
   var iframe = document.createElement('iframe');
-  iframe.src = '${baseUrl}?cfg=' + encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(window.sMartMeetingConfig || {})))));
+  iframe.src = '${buildWidgetUrl(cfg, widgetId)}';
   iframe.width = '${width}';
   iframe.height = '${height}px';
   iframe.frameBorder = '0';
@@ -5787,7 +5820,10 @@ function checkGenerateReady() {
   }
 }
 
-function buildWidgetUrl(config) {
+function buildWidgetUrl(config, widgetId = currentWidgetId) {
+  if (widgetId) {
+    return `${getWidgetPageUrl()}?widgetId=${encodeURIComponent(widgetId)}`;
+  }
   const cfgB64 = btoa(unescape(encodeURIComponent(JSON.stringify(config))));
   return `${getWidgetPageUrl()}?cfg=${cfgB64}`;
 }
@@ -5800,8 +5836,8 @@ function getWidgetPageUrl() {
   return page;
 }
 
-function buildWidgetIframe(config, width = '100%', height = 750) {
-  const src = buildWidgetUrl(config);
+function buildWidgetIframe(config, width = '100%', height = 750, widgetId = currentWidgetId) {
+  const src = buildWidgetUrl(config, widgetId);
   const br  = config.borderRadius ?? 20;
   return `<iframe
   src="${src}"
@@ -5816,7 +5852,7 @@ function buildWidgetIframe(config, width = '100%', height = 750) {
 }
 
 function renderShareLink() {
-  const url = buildWidgetUrl(cfg);
+  const url = buildWidgetUrl(cfg, currentWidgetId);
   const inp    = document.getElementById('shareLink');
   if (inp) inp.value = url;
 }
@@ -5961,8 +5997,8 @@ function renderWidgetsList() {
     const date = new Date(w.createdAt).toLocaleDateString(currentLanguage === 'en' ? 'en-US' : 'ru-RU', {day:'numeric', month:'long', year:'numeric'});
     const widgetCfg = Object.assign(deepClone(DEFAULT), deepClone(w.config || {}));
     const exported = isWidgetExported(w);
-    const shareUrl = exported ? buildWidgetUrl(widgetCfg) : '';
-    const iframeCode = exported ? buildWidgetIframe(widgetCfg) : '';
+    const shareUrl = exported ? buildWidgetUrl(widgetCfg, w.id) : '';
+    const iframeCode = exported ? buildWidgetIframe(widgetCfg, '100%', 750, w.id) : '';
     const exportedMeta = exported
       ? `${t('widget_exported')} ${new Date(w.exportedAt).toLocaleDateString(currentLanguage === 'en' ? 'en-US' : 'ru-RU', {day:'numeric', month:'long', year:'numeric'})}`
       : t('widget_not_exported');

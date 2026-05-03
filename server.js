@@ -10,6 +10,8 @@ const DATA_DIR = process.env.DATA_DIR || (fs.existsSync('/data') ? '/data' : pat
 const LEGACY_DATA_DIR = path.join(ROOT, 'data');
 const MAILRU_CONFIG_PATH = path.join(DATA_DIR, 'mailru-calendar-integration.json');
 const LEGACY_MAILRU_CONFIG_PATH = path.join(LEGACY_DATA_DIR, 'mailru-calendar-integration.json');
+const WIDGETS_PATH = path.join(DATA_DIR, 'widgets.json');
+const LEGACY_WIDGETS_PATH = path.join(LEGACY_DATA_DIR, 'widgets.json');
 const CONFIG_SECRET = process.env.MAILRU_CONFIG_SECRET || process.env.APP_SECRET || '';
 
 const MIME_TYPES = {
@@ -32,6 +34,11 @@ const MIME_TYPES = {
 const MAILRU_DEFAULT_CONFIG = {
   enabled: false,
   employees: {},
+  updatedAt: null
+};
+
+const WIDGETS_DEFAULT_CONFIG = {
+  widgets: [],
   updatedAt: null
 };
 
@@ -137,6 +144,64 @@ function loadMailruConfig() {
 function saveMailruConfig(config) {
   ensureDataDir();
   fs.writeFileSync(MAILRU_CONFIG_PATH, JSON.stringify(config, null, 2));
+}
+
+function loadWidgetsConfig() {
+  const candidates = [WIDGETS_PATH, LEGACY_WIDGETS_PATH].filter((value, index, self) => self.indexOf(value) === index);
+  for (const candidate of candidates) {
+    try {
+      const raw = fs.readFileSync(candidate, 'utf8');
+      const parsed = JSON.parse(raw);
+      const widgets = Array.isArray(parsed.widgets)
+        ? parsed.widgets
+        : Array.isArray(parsed)
+          ? parsed
+          : [];
+      const normalized = {
+        ...WIDGETS_DEFAULT_CONFIG,
+        ...parsed,
+        widgets
+      };
+      if (candidate !== WIDGETS_PATH) {
+        try {
+          saveWidgetsConfig(normalized);
+        } catch (migrationError) {
+          // Keep the legacy read path available if migration fails.
+        }
+      }
+      return normalized;
+    } catch (error) {
+      // Try the next candidate path.
+    }
+  }
+  return { ...WIDGETS_DEFAULT_CONFIG };
+}
+
+function saveWidgetsConfig(config) {
+  ensureDataDir();
+  fs.writeFileSync(WIDGETS_PATH, JSON.stringify(config, null, 2));
+}
+
+function normalizeStoredWidget(widget) {
+  if (!widget || typeof widget !== 'object') return null;
+  const id = String(widget.id || '').trim();
+  if (!id) return null;
+  const createdAt = typeof widget.createdAt === 'string' && widget.createdAt ? widget.createdAt : new Date().toISOString();
+  const exportedAt = typeof widget.exportedAt === 'string' && widget.exportedAt ? widget.exportedAt : null;
+  const name = typeof widget.name === 'string' ? widget.name : '';
+  const config = widget.config && typeof widget.config === 'object' ? widget.config : {};
+  const configuredSections = widget.configuredSections && typeof widget.configuredSections === 'object'
+    ? widget.configuredSections
+    : {};
+  return {
+    ...widget,
+    id,
+    name,
+    createdAt,
+    exportedAt,
+    config,
+    configuredSections
+  };
 }
 
 function maskAccount(account) {
@@ -565,6 +630,54 @@ async function queryCalendarBusyEvents({ account, password, calendarUrl, from, t
 }
 
 async function handleApi(req, res, requestUrl) {
+  if (req.method === 'GET' && requestUrl.pathname === '/api/widgets') {
+    const data = loadWidgetsConfig();
+    return sendJson(res, 200, {
+      ok: true,
+      widgets: Array.isArray(data.widgets) ? data.widgets.map(normalizeStoredWidget).filter(Boolean) : [],
+      updatedAt: data.updatedAt || null
+    });
+  }
+
+  if (req.method === 'GET' && requestUrl.pathname.startsWith('/api/widgets/')) {
+    const widgetId = decodeURIComponent(requestUrl.pathname.slice('/api/widgets/'.length)).trim();
+    if (!widgetId) {
+      return sendError(res, 400, 'Не передан идентификатор виджета');
+    }
+    const data = loadWidgetsConfig();
+    const widget = (Array.isArray(data.widgets) ? data.widgets : []).map(normalizeStoredWidget).find(item => item && item.id === widgetId);
+    if (!widget) {
+      return sendError(res, 404, 'Виджет не найден');
+    }
+    return sendJson(res, 200, { ok: true, widget });
+  }
+
+  if (req.method === 'POST' && requestUrl.pathname === '/api/widgets') {
+    try {
+      const body = await readJsonBody(req);
+      const incomingWidgets = Array.isArray(body.widgets)
+        ? body.widgets
+        : Array.isArray(body.data?.widgets)
+          ? body.data.widgets
+          : null;
+      if (!incomingWidgets) {
+        return sendError(res, 400, 'Ожидался массив widgets');
+      }
+      const nextConfig = {
+        widgets: incomingWidgets.map(normalizeStoredWidget).filter(Boolean),
+        updatedAt: new Date().toISOString()
+      };
+      saveWidgetsConfig(nextConfig);
+      return sendJson(res, 200, {
+        ok: true,
+        widgets: nextConfig.widgets,
+        updatedAt: nextConfig.updatedAt
+      });
+    } catch (error) {
+      return sendError(res, error.statusCode || 500, error.message);
+    }
+  }
+
   if (req.method === 'GET' && requestUrl.pathname === '/api/integrations/mailru') {
     return sendJson(res, 200, mailruPublicConfig(loadMailruConfig()));
   }

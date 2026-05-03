@@ -864,21 +864,39 @@
       try { return JSON.parse(localStorage.getItem('smm_preview_cfg') || 'null'); } catch { return null; }
     }
 
+    function _fetchWidgetCfgById(widgetId) {
+      if (!widgetId) return null;
+      try {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `/api/widgets/${encodeURIComponent(widgetId)}`, false);
+        xhr.send(null);
+        if (xhr.status < 200 || xhr.status >= 300) return null;
+        const parsed = JSON.parse(xhr.responseText || '{}');
+        return parsed && parsed.ok && parsed.widget && typeof parsed.widget.config === 'object'
+          ? parsed.widget.config
+          : null;
+      } catch {
+        return null;
+      }
+    }
+
     function _readSavedWidgetCfg() {
       try {
-        const list = JSON.parse(localStorage.getItem('smm_widgets') || '[]');
-        if (!Array.isArray(list) || !list.length) return null;
-
         const params = new URLSearchParams(window.location.search);
         const byId = params.get('widgetId') || params.get('widget') || params.get('id');
-        const activeId = localStorage.getItem('smm_active_widget_id');
+        if (byId) {
+          const remote = _fetchWidgetCfgById(byId);
+          if (remote) return remote;
+        }
 
-        const targetId = byId || activeId;
+        const list = JSON.parse(localStorage.getItem('smm_widgets') || '[]');
+        if (!Array.isArray(list) || !list.length) return null;
+        const activeId = localStorage.getItem('smm_active_widget_id');
+        const targetId = activeId || byId;
         if (targetId) {
           const found = list.find((w) => w && w.id === targetId);
           if (found && found.config) return found.config;
         }
-
         const last = list[list.length - 1];
         return last && last.config ? last.config : null;
       } catch {
