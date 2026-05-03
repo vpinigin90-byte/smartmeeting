@@ -1088,9 +1088,10 @@
     const globalTimeSlots = (_pc.timeSlots && _pc.timeSlots.length)
       ? _pc.timeSlots
       : ['10:00','10:30','11:00','11:30','12:00','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
+    const staffMembers = Array.isArray(_pc.staff) ? _pc.staff.filter(Boolean) : [];
     const mailruBusyCache = new Map();
-    let mailruSourceEmployeeId = _pc.mailruEmployeeId || _pc.mailruEmployee?.id || '';
-    let mailruSourceLoaded = Boolean(mailruSourceEmployeeId);
+    let mailruIntegrationSnapshot = null;
+    let mailruIntegrationLoaded = false;
     let mailruAvailabilityLoading = false;
     let mailruAvailabilityToken = 0;
     const defaultMeetingDurationMinutes = Math.max(15, Number(_pc.meetingDurationMinutes || _pc.meetingDuration || _pc.durationMinutes || 60) || 60);
@@ -1192,34 +1193,45 @@
 
     let businessDates = [];
 
-    function getMailruEmployeeSource() {
-      const staff = Array.isArray(_pc.staff) ? _pc.staff : [];
-      if (!staff.length) return null;
-      const explicitId = _pc.mailruEmployeeId || _pc.mailruEmployee?.id || mailruSourceEmployeeId || '';
-      if (explicitId) {
-        const found = staff.find((employee) => employee && employee.id === explicitId);
-        if (found) return found;
-      }
-      const firstConfigured = staff.find((employee) => (
-        employee && ((Array.isArray(employee.weekdays) && employee.weekdays.length) || (Array.isArray(employee.timeSlots) && employee.timeSlots.length))
-      ));
-      return firstConfigured || null;
-    }
-
-    function getAllowedWeekdays() {
-      const source = getMailruEmployeeSource();
-      if (source && Array.isArray(source.weekdays) && source.weekdays.length) {
-        return source.weekdays;
-      }
+    function getDefaultWeekdays() {
       return (_pc.weekdays && _pc.weekdays.length) ? _pc.weekdays : [1,2,3,4,5];
     }
 
-    function getEffectiveTimeSlots() {
-      const source = getMailruEmployeeSource();
-      if (source && Array.isArray(source.timeSlots) && source.timeSlots.length) {
-        return source.timeSlots;
-      }
-      return globalTimeSlots;
+    function getEmployeeWeekdays(employee) {
+      return (employee && Array.isArray(employee.weekdays) && employee.weekdays.length)
+        ? employee.weekdays
+        : getDefaultWeekdays();
+    }
+
+    function getEmployeeTimeSlots(employee) {
+      return (employee && Array.isArray(employee.timeSlots) && employee.timeSlots.length)
+        ? employee.timeSlots
+        : globalTimeSlots;
+    }
+
+    function intersectArrays(base, next) {
+      const nextSet = new Set(next);
+      return base.filter((item) => nextSet.has(item));
+    }
+
+    function getCombinedWeekdays() {
+      const base = getDefaultWeekdays();
+      if (!staffMembers.length) return base;
+      return staffMembers.reduce((acc, employee) => intersectArrays(acc, getEmployeeWeekdays(employee)), base);
+    }
+
+    function getCombinedTimeSlots() {
+      if (!staffMembers.length) return globalTimeSlots;
+      return staffMembers.reduce((acc, employee) => intersectArrays(acc, getEmployeeTimeSlots(employee)), globalTimeSlots);
+    }
+
+    function getMailruCalendarEmployees() {
+      const snapshotEmployees = mailruIntegrationSnapshot?.employees || {};
+      return staffMembers.filter((employee) => {
+        if (!employee || !employee.id) return false;
+        const mailruState = snapshotEmployees[employee.id];
+        return Boolean(mailruState && mailruState.account && mailruState.hasPassword && mailruState.selectedCalendarUrl);
+      });
     }
 
     function refreshBusinessDates() {
@@ -1237,7 +1249,7 @@
       const result = [];
       const now = new Date();
       let plus = 1;
-      const allowedWeekdays = getAllowedWeekdays();
+      const allowedWeekdays = getCombinedWeekdays();
 
       while (result.length < limit) {
         const d = new Date(now);
@@ -1245,7 +1257,7 @@
         plus += 1;
 
         const weekday = d.getDay();
-        if (!_allowedWeekdays.includes(weekday)) continue;
+        if (!allowedWeekdays.includes(weekday)) continue;
 
         const dateId = toDateId(d);
 
@@ -1288,40 +1300,33 @@
 
     function availableSlots(dateId) {
       const busySlots = mailruBusyCache.get(dateId) || [];
-      return getEffectiveTimeSlots().filter((slot) => !slotOverlapsBusy(dateId, slot, defaultMeetingDurationMinutes, busySlots));
-    }
-
-    function getMailruSourceEmployeeIdFromResponse(data) {
-      if (!data || !data.enabled || !data.employees) return '';
-      if (mailruSourceEmployeeId && data.employees[mailruSourceEmployeeId]) return mailruSourceEmployeeId;
-      const firstEnabled = Object.entries(data.employees).find(([, employee]) => (
-        employee && employee.account && employee.hasPassword && employee.selectedCalendarUrl
-      ));
-      return firstEnabled ? firstEnabled[0] : '';
+      return getCombinedTimeSlots().filter((slot) => !slotOverlapsBusy(dateId, slot, defaultMeetingDurationMinutes, busySlots));
     }
 
     async function ensureMailruAvailability(dateId) {
       if (!dateId) return;
       const token = ++mailruAvailabilityToken;
 
-      if (!mailruSourceLoaded) {
+      if (!mailruIntegrationLoaded) {
         try {
           const response = await fetch('/api/integrations/mailru', { credentials: 'same-origin' });
           if (response.ok) {
-            const data = await response.json();
-            mailruSourceEmployeeId = getMailruSourceEmployeeIdFromResponse(data);
-            refreshBusinessDates();
-            renderDates();
-            renderTimes();
+            mailruIntegrationSnapshot = await response.json();
           }
         } catch {
           // Ignore and fall back to local schedule only.
         } finally {
-          mailruSourceLoaded = true;
+          mailruIntegrationLoaded = true;
         }
       }
 
-      if (!mailruSourceEmployeeId || mailruBusyCache.has(dateId)) return;
+      const employees = getMailruCalendarEmployees();
+      if (!employees.length) {
+        mailruBusyCache.set(dateId, []);
+        return;
+      }
+
+      if (mailruBusyCache.has(dateId)) return;
 
       mailruAvailabilityLoading = true;
       renderTimes();
@@ -1329,20 +1334,23 @@
       try {
         const from = new Date(`${dateId}T00:00:00`);
         const to = new Date(`${dateId}T23:59:59`);
-        const response = await fetch('/api/integrations/mailru/availability', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({
-            employeeId: mailruSourceEmployeeId,
-            from: from.toISOString(),
-            to: to.toISOString()
-          })
-        });
-        if (!response.ok) throw new Error(`Mail.ru availability ${response.status}`);
-        const data = await response.json();
+        const responses = await Promise.all(employees.map(async (employee) => {
+          const response = await fetch('/api/integrations/mailru/availability', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              employeeId: employee.id,
+              from: from.toISOString(),
+              to: to.toISOString()
+            })
+          });
+          if (!response.ok) throw new Error(`Mail.ru availability ${response.status}`);
+          const data = await response.json();
+          return Array.isArray(data.busySlots) ? data.busySlots : [];
+        }));
         if (token !== mailruAvailabilityToken) return;
-        mailruBusyCache.set(dateId, Array.isArray(data.busySlots) ? data.busySlots : []);
+        mailruBusyCache.set(dateId, responses.flat());
       } catch {
         if (token !== mailruAvailabilityToken) return;
         mailruBusyCache.set(dateId, []);
@@ -1416,7 +1424,16 @@
         renderInlineSummary();
       }
 
-      getEffectiveTimeSlots().forEach((slot) => {
+      if (mailruAvailabilityLoading && !mailruBusyCache.has(state.selectedDate)) {
+        const loading = document.createElement('div');
+        loading.className = 'hint';
+        loading.textContent = 'Проверяем доступность календарей сотрудников...';
+        refs.timeGrid.appendChild(loading);
+        return;
+      }
+
+      const effectiveTimeSlots = getCombinedTimeSlots();
+      effectiveTimeSlots.forEach((slot) => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'option';
@@ -1446,7 +1463,7 @@
       if (mailruAvailabilityLoading) {
         const loading = document.createElement('div');
         loading.className = 'hint';
-        loading.textContent = 'Проверяем занятость календаря Mail.ru...';
+        loading.textContent = 'Проверяем доступность календарей сотрудников...';
         refs.timeGrid.appendChild(loading);
       }
     }
