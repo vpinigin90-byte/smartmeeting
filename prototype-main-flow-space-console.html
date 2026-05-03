@@ -1085,9 +1085,17 @@
       els2.forEach(el => { el.textContent = _q1label; });
     })();
 
-    const globalTimeSlots = (_pc.timeSlots && _pc.timeSlots.length)
-      ? _pc.timeSlots
-      : ['10:00','10:30','11:00','11:30','12:00','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
+    function buildFullDaySlots(stepMinutes = 30) {
+      const slots = [];
+      for (let minutes = 0; minutes < 24 * 60; minutes += stepMinutes) {
+        const hours = String(Math.floor(minutes / 60)).padStart(2, '0');
+        const mins = String(minutes % 60).padStart(2, '0');
+        slots.push(`${hours}:${mins}`);
+      }
+      return slots;
+    }
+
+    const globalTimeSlots = buildFullDaySlots(30);
     const staffMembers = Array.isArray(_pc.staff) ? _pc.staff.filter(Boolean) : [];
     const mandatoryMembers = Array.isArray(_pc.mandatoryParticipants) ? _pc.mandatoryParticipants.filter(Boolean) : [];
     const mailruBusyCache = new Map();
@@ -1096,19 +1104,8 @@
     let mailruAvailabilityLoading = false;
     let mailruAvailabilityToken = 0;
     const defaultMeetingDurationMinutes = Math.max(15, Number(_pc.meetingDurationMinutes || _pc.meetingDuration || _pc.durationMinutes || 60) || 60);
-    const bufferMinutesRaw = Number(_pc.bufferMinutes);
-    const bufferMinutes = Number.isFinite(bufferMinutesRaw) && bufferMinutesRaw >= 0 ? bufferMinutesRaw : 30;
-
     const daysAheadRaw = Number(_pc.daysAhead);
     const _daysAhead = Number.isFinite(daysAheadRaw) && daysAheadRaw > 0 ? daysAheadRaw : 7;
-
-    const fixedHolidayDays = (_pc.fixedHolidays && _pc.fixedHolidays.length)
-      ? _pc.fixedHolidays
-      : ['01-01','01-02','01-03','01-04','01-05','01-06','01-07','01-08','02-23','03-08','05-01','05-09','06-12','11-04'];
-
-    const _observedList = (_pc.observedHolidays && _pc.observedHolidays.length)
-      ? _pc.observedHolidays
-      : ['2026-01-09','2026-03-09','2026-05-11','2026-12-31'];
     // Contact fields config
     const _contactFields = _pc.contactFields || [];
     function _cfFind(id) { return _contactFields.find(f => f.id === id); }
@@ -1164,7 +1161,7 @@
       teamSize: ''
     };
 
-    // topicOptions, teamSizeOptions, timeSlots — defined above from preview config
+    // topicOptions and teamSizeOptions are defined above from preview config
 
     const refs = {
       dateGrid: document.getElementById('dateGrid'),
@@ -1186,19 +1183,7 @@
     const questionPanel = document.querySelector('[data-step="3"]');
     if (questionPanel && !questionsEnabled) questionPanel.style.display = 'none';
 
-    // fixedHolidayDays — defined above from preview config
-
-    function isProductionHoliday(dateId) {
-      const monthDay = dateId.slice(5);
-      if (fixedHolidayDays.includes(monthDay)) return true;
-      return _observedList.includes(dateId);
-    }
-
     let businessDates = [];
-
-    function getDefaultWeekdays() {
-      return Array.isArray(_pc.weekdays) && _pc.weekdays.length ? _pc.weekdays : [1,2,3,4,5];
-    }
 
     function getMailruCalendarEmployees() {
       const snapshotEmployees = mailruIntegrationSnapshot?.employees || {};
@@ -1224,15 +1209,11 @@
       const result = [];
       const now = new Date();
       let plus = 1;
-      const allowedWeekdays = getDefaultWeekdays();
 
       while (result.length < limit) {
         const d = new Date(now);
         d.setDate(now.getDate() + plus);
         plus += 1;
-
-        const weekday = d.getDay();
-        if (!allowedWeekdays.includes(weekday)) continue;
 
         const dateId = toDateId(d);
 
@@ -1241,7 +1222,7 @@
           date: d,
           label: d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' }),
           day: d.toLocaleDateString('ru-RU', { weekday: 'short' }),
-          isHoliday: isProductionHoliday(dateId)
+          isHoliday: false
         });
       }
 
@@ -1267,8 +1248,8 @@
       const slotStart = getSlotStart(dateId, slot).getTime();
       const slotEnd = getSlotEnd(dateId, slot, durationMinutes).getTime();
       return (busySlots || []).some((busy) => {
-        const busyStart = new Date(busy.start).getTime() - (bufferMinutes * 60000);
-        const busyEnd = new Date(busy.end).getTime() + (bufferMinutes * 60000);
+        const busyStart = new Date(busy.start).getTime();
+        const busyEnd = new Date(busy.end).getTime();
         return Number.isFinite(busyStart) && Number.isFinite(busyEnd) && busyStart < slotEnd && busyEnd > slotStart;
       });
     }
