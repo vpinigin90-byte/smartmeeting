@@ -3285,18 +3285,21 @@
         </div>
         <div class="intg-hint">Сейчас доступна интеграция только с календарём Mail.ru. Данные аккаунта и выбор календаря настраиваются в карточке каждого сотрудника в разделе «Команда».</div>
         <div class="calendar-intg-grid">
-          <div class="calendar-provider-card">
-            <h4>Календарь Mail.ru</h4>
-            <div class="toggle-row">
-              <label class="toggle-switch">
-                <input type="checkbox" id="calMailruEnabled" />
+        <div class="calendar-provider-card">
+          <h4>Календарь Mail.ru</h4>
+          <div class="toggle-row">
+            <label class="toggle-switch">
+              <input type="checkbox" id="calMailruEnabled" />
                 <span class="toggle-track"></span>
-              </label>
-              <span class="toggle-label">Включить</span>
-            </div>
-            <div class="intg-status" id="mailruStatus">Интеграция выключена.</div>
+            </label>
+            <span class="toggle-label">Включить</span>
+          </div>
+          <div class="intg-status" id="mailruStatus">Интеграция выключена.</div>
+          <div class="provider-actions" style="margin-top:12px">
+            <button type="button" class="btn-save" id="openMailruPrototypeBtn" data-i18n="action_open_mailru_prototype">Открыть прототип слотов</button>
           </div>
         </div>
+      </div>
         <div class="save-bar" style="margin-top:14px">
           <button class="btn-save accent" data-save="calendar">Сохранить</button>
         </div>
@@ -3877,6 +3880,7 @@ const TRANSLATIONS = {
     nav_integrations: 'Интеграции',
     action_export_widget: 'Экспорт виджета',
     action_refresh_export: 'Обновить экспорт виджета',
+    action_open_mailru_prototype: 'Открыть прототип слотов',
     action_add_widget: '+ Добавить виджет',
     settings_theme_title: 'Тема интерфейса',
     settings_language_title: 'Язык интерфейса',
@@ -3919,6 +3923,7 @@ const TRANSLATIONS = {
     nav_integrations: 'Integrations',
     action_export_widget: 'Export widget',
     action_refresh_export: 'Refresh widget export',
+    action_open_mailru_prototype: 'Open slot prototype',
     action_add_widget: '+ Add widget',
     settings_theme_title: 'Interface theme',
     settings_language_title: 'Interface language',
@@ -4196,6 +4201,38 @@ function getPrimaryMailruEmployeeId() {
   return configured.length === 1 ? configured[0][0] : '';
 }
 
+function getMailruPrototypeEmployee() {
+  const employees = mailruIntegrationState.employees || {};
+  const configured = Object.entries(employees).filter(([, employeeState]) => (
+    Boolean(employeeState.account) &&
+    Boolean(employeeState.hasPassword) &&
+    Boolean(employeeState.selectedCalendarUrl)
+  ));
+  return configured[0] || null;
+}
+
+function buildMailruPrototypeUrl() {
+  const selection = getMailruPrototypeEmployee();
+  const url = new URL('/mailru-caldav', window.location.origin);
+  if (selection) {
+    const [employeeId, employeeState] = selection;
+    if (employeeState.account) url.searchParams.set('account', employeeState.account);
+    if (employeeState.selectedCalendarUrl) url.searchParams.set('calendarUrl', employeeState.selectedCalendarUrl);
+    url.searchParams.set('employeeId', employeeId);
+  }
+  return url.toString();
+}
+
+function updateMailruPrototypeButton() {
+  const btn = document.getElementById('openMailruPrototypeBtn');
+  if (!btn) return;
+  const enabled = !!mailruIntegrationState.enabled && hasActiveMailruEmployees();
+  btn.disabled = !enabled;
+  btn.title = enabled
+    ? 'Открыть отдельный прототип проверки доступности слотов Mail.ru'
+    : 'Сначала включите Mail.ru и подключите хотя бы одного сотрудника с календарём';
+}
+
 function populateMailruIntegration() {
   document.getElementById('calMailruEnabled').checked = !!mailruIntegrationState.enabled;
   if (mailruIntegrationState.enabled) {
@@ -4203,6 +4240,7 @@ function populateMailruIntegration() {
   } else {
     setMailruStatus('Интеграция выключена.', '');
   }
+  updateMailruPrototypeButton();
 }
 
 async function loadMailruIntegration() {
@@ -4266,6 +4304,7 @@ async function saveMailruEmployeeIntegration(employeeId, { account, password, se
     ...(mailruIntegrationState.employees || {}),
     [employeeId]: data.employee || {}
   };
+  updateMailruPrototypeButton();
   return data.employee;
 }
 
@@ -4278,6 +4317,7 @@ async function refreshMailruEmployeeCalendars(employeeId) {
     ...(mailruIntegrationState.employees || {}),
     [employeeId]: data.employee || {}
   };
+  updateMailruPrototypeButton();
   return data.employee;
 }
 
@@ -6473,6 +6513,11 @@ document.getElementById('calMailruEnabled').addEventListener('change', e => {
   if (mailruDisableConfirmed) return;
   e.target.checked = true;
   openMailruDisableModal();
+});
+
+document.getElementById('openMailruPrototypeBtn').addEventListener('click', () => {
+  if (!mailruIntegrationState.enabled || !hasActiveMailruEmployees()) return;
+  window.open(buildMailruPrototypeUrl(), '_blank', 'noopener,noreferrer');
 });
 
 // ═══════════════ DASHBOARD ═══════════════

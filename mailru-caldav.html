@@ -345,6 +345,19 @@
       }
     }
 
+    function loadFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const account = params.get('account');
+      const calendarUrl = params.get('calendarUrl');
+      if (account && !refs.account.value.trim()) {
+        refs.account.value = account;
+        state.account = account;
+      }
+      if (calendarUrl) {
+        state.selectedCalendarUrl = calendarUrl;
+      }
+    }
+
     function formatDateLabel(date) {
       return date.toLocaleDateString('ru-RU', {
         weekday: 'short',
@@ -528,6 +541,7 @@
     });
 
     loadLocal();
+    loadFromQuery();
     if (state.account && state.password) {
       setStatus('Найдены сохранённые данные. Нажмите «Показать», чтобы обновить слоты.', 'ok');
     }
