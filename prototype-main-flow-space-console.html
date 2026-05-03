@@ -1200,34 +1200,6 @@
       return Array.isArray(_pc.weekdays) && _pc.weekdays.length ? _pc.weekdays : [1,2,3,4,5];
     }
 
-    function getEmployeeWeekdays(employee) {
-      return Array.isArray(employee?.weekdays) && employee.weekdays.length
-        ? employee.weekdays
-        : getDefaultWeekdays();
-    }
-
-    function getEmployeeTimeSlots(employee) {
-      return Array.isArray(employee?.timeSlots) && employee.timeSlots.length
-        ? employee.timeSlots
-        : globalTimeSlots;
-    }
-
-    function intersectArrays(base, next) {
-      const nextSet = new Set(next);
-      return base.filter((item) => nextSet.has(item));
-    }
-
-    function getCombinedWeekdays() {
-      const base = getDefaultWeekdays();
-      if (!staffMembers.length) return base;
-      return staffMembers.reduce((acc, employee) => intersectArrays(acc, getEmployeeWeekdays(employee)), base);
-    }
-
-    function getCombinedTimeSlots() {
-      if (!staffMembers.length) return globalTimeSlots;
-      return staffMembers.reduce((acc, employee) => intersectArrays(acc, getEmployeeTimeSlots(employee)), globalTimeSlots);
-    }
-
     function getMailruCalendarEmployees() {
       const snapshotEmployees = mailruIntegrationSnapshot?.employees || {};
       return [...staffMembers, ...mandatoryMembers].filter((employee) => {
@@ -1252,7 +1224,7 @@
       const result = [];
       const now = new Date();
       let plus = 1;
-      const allowedWeekdays = getCombinedWeekdays();
+      const allowedWeekdays = getDefaultWeekdays();
 
       while (result.length < limit) {
         const d = new Date(now);
@@ -1303,7 +1275,7 @@
 
     function availableSlots(dateId) {
       const busySlots = mailruBusyCache.get(dateId) || [];
-      return getCombinedTimeSlots().filter((slot) => !slotOverlapsBusy(dateId, slot, defaultMeetingDurationMinutes, busySlots));
+      return globalTimeSlots.filter((slot) => !slotOverlapsBusy(dateId, slot, defaultMeetingDurationMinutes, busySlots));
     }
 
     async function ensureMailruAvailability(dateId) {
@@ -1435,8 +1407,7 @@
         return;
       }
 
-      const effectiveTimeSlots = getCombinedTimeSlots();
-      effectiveTimeSlots.forEach((slot) => {
+      globalTimeSlots.forEach((slot) => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'option';
