@@ -242,6 +242,15 @@ function fallbackMailruCalendarName(href) {
   return decoded.charAt(0).toUpperCase() + decoded.slice(1);
 }
 
+function isMailruCalendarContainerUrl(url, homeUrl) {
+  if (!url) return true;
+  const normalized = String(url).split('?')[0].replace(/\/+$/, '');
+  const homeNormalized = String(homeUrl || '').split('?')[0].replace(/\/+$/, '');
+  if (!normalized || normalized === homeNormalized) return true;
+  const lower = normalized.toLowerCase();
+  return lower.endsWith('/calendars') || lower.endsWith('/principals');
+}
+
 function toAbsoluteUrl(base, href) {
   return new URL(href, base).toString();
 }
@@ -536,6 +545,7 @@ async function discoverMailruCalendars({ account, password }) {
       const href = getTagValue(responseXml, 'href');
       if (!href) return null;
       const resolvedUrl = toAbsoluteUrl(rootUrl, href);
+      if (isMailruCalendarContainerUrl(resolvedUrl, homeUrl)) return null;
       const displayName = getTagValue(responseXml, 'displayname') || fallbackMailruCalendarName(href);
       const contentType = (getTagValue(responseXml, 'getcontenttype') || '').toLowerCase();
       const resourceTypeXml = responseXml.toLowerCase();
@@ -559,7 +569,7 @@ async function discoverMailruCalendars({ account, password }) {
           const href = getTagValue(responseXml, 'href');
           if (!href) return null;
           const resolvedUrl = toAbsoluteUrl(rootUrl, href);
-          if (resolvedUrl === homeUrl) return null;
+          if (isMailruCalendarContainerUrl(resolvedUrl, homeUrl)) return null;
           const displayName = getTagValue(responseXml, 'displayname') || fallbackMailruCalendarName(href);
           return {
             url: resolvedUrl,
@@ -900,6 +910,61 @@ async function handleApi(req, res, requestUrl) {
     }
   }
 
+  if (req.method === 'POST' && requestUrl.pathname === '/api/mailru/preview') {
+    try {
+      const body = await readJsonBody(req);
+      const account = String(body.account || '').trim();
+      const password = String(body.password || '').trim();
+      if (!account || !password) {
+        return sendError(res, 400, 'Укажите email Mail.ru и пароль внешнего приложения');
+      }
+
+      const discovery = await discoverMailruCalendars({ account, password });
+      const selectedCalendarUrl = String(body.calendarUrl || '').trim() || (discovery.calendars[0] && discovery.calendars[0].url) || '';
+      const selectedCalendar = discovery.calendars.find(calendar => calendar.url === selectedCalendarUrl) || discovery.calendars[0] || null;
+
+      if (!selectedCalendarUrl) {
+        return sendError(res, 400, 'У аккаунта Mail.ru не найдено ни одного доступного календаря');
+      }
+
+      const from = body.from ? new Date(body.from) : null;
+      const to = body.to ? new Date(body.to) : null;
+      const hasRange = from instanceof Date && !Number.isNaN(from) && to instanceof Date && !Number.isNaN(to) && to > from;
+
+      if (!hasRange) {
+        return sendJson(res, 200, {
+          ok: true,
+          account,
+          calendars: discovery.calendars,
+          calendar: selectedCalendar,
+          principalUrl: discovery.principalUrl,
+          homeUrl: discovery.homeUrl
+        });
+      }
+
+      const busySlots = await queryCalendarBusyEvents({
+        account,
+        password,
+        calendarUrl: selectedCalendarUrl,
+        from,
+        to
+      });
+
+      return sendJson(res, 200, {
+        ok: true,
+        account,
+        calendars: discovery.calendars,
+        calendar: selectedCalendar,
+        from: from.toISOString(),
+        to: to.toISOString(),
+        busySlots,
+        isBusy: busySlots.length > 0
+      });
+    } catch (error) {
+      return sendError(res, error.statusCode || 500, error.message);
+    }
+  }
+
   if (req.method === 'GET' && (
     requestUrl.pathname === '/health' ||
     requestUrl.pathname === '/healthz' ||
@@ -922,6 +987,17 @@ const server = http.createServer(async (req, res) => {
 
     if (requestUrl.pathname.startsWith('/api/')) {
       return await handleApi(req, res, requestUrl);
+    }
+
+    if (requestUrl.pathname === '/mailru-caldav' || requestUrl.pathname === '/mailru-caldav.html') {
+      const filePath = path.join(ROOT, 'mailru-caldav.html');
+      try {
+        const data = fs.readFileSync(filePath);
+        send(res, 200, data, 'text/html; charset=utf-8');
+      } catch (error) {
+        send(res, 500, 'Mail.ru CalDAV prototype page is unavailable', 'text/plain; charset=utf-8');
+      }
+      return;
     }
 
     const filePath = resolveRequestPath(requestUrl.pathname);
